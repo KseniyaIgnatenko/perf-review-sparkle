@@ -1,33 +1,32 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut } from "lucide-react";
+import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 const navItems = [
-  { icon: Home, label: "Главная", path: "/" },
+  { icon: Home, label: "Главная", path: "/dashboard" },
   { icon: Target, label: "Мои цели", path: "/goals" },
   { icon: ClipboardList, label: "Самооценка", path: "/self-assessment" },
   { icon: Users, label: "Оценка коллег", path: "/peer-review", badge: 2 },
-  { icon: BarChart3, label: "Аналитика", path: "/analytics" },
+  { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics" },
   { icon: FileText, label: "Отчеты", path: "/reports" },
 ];
 
 export const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  const handleLogout = () => navigate("/");
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">W</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold leading-none">WINK</h1>
-                <p className="text-xs text-muted-foreground">Performance Review</p>
-              </div>
+            <Link to="/dashboard" className="flex items-center gap-3">
+              <img src={winkLogo} alt="WINK" className="h-8" />
+              <span className="font-bold text-lg">Performance Review</span>
             </Link>
 
             <div className="hidden md:flex items-center gap-1">
@@ -60,7 +59,7 @@ export const Navigation = () => {
             </div>
           </div>
 
-          <Button variant="ghost" size="sm" className="gap-2">
+          <Button variant="ghost" size="sm" className="gap-2" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
             <span className="hidden md:inline">Выйти</span>
           </Button>

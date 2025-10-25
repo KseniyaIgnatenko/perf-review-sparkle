@@ -7,6 +7,10 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Goals from "./pages/Goals";
 import SelfAssessment from "./pages/SelfAssessment";
+import PeerReview from "./pages/PeerReview";
+import Manager from "./pages/Manager";
+import HRAnalytics from "./pages/HRAnalytics";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,10 +26,10 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/goals" element={<Goals />} />
           <Route path="/self-assessment" element={<SelfAssessment />} />
-          <Route path="/peer-review" element={<Dashboard />} />
-          <Route path="/analytics" element={<Dashboard />} />
-          <Route path="/reports" element={<Dashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/peer-review" element={<PeerReview />} />
+          <Route path="/manager" element={<Manager />} />
+          <Route path="/hr-analytics" element={<HRAnalytics />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

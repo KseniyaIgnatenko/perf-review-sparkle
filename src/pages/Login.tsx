@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import winkLogo from "@/assets/wink-logo.png";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -55,11 +56,9 @@ export default function Login() {
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 gradient-primary rounded-2xl mb-4">
-              <span className="text-primary-foreground font-bold text-3xl">W</span>
-            </div>
-            <h1 className="text-3xl font-bold">WINK Performance Review</h1>
+          <div className="text-center space-y-4">
+            <img src={winkLogo} alt="WINK" className="h-16 mx-auto" />
+            <h1 className="text-3xl font-bold">Performance Review</h1>
             <p className="text-muted-foreground text-lg">
               Система целеполагания и оценки
             </p>
