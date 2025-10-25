@@ -17,7 +17,7 @@ export const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const handleLogout = () => navigate("/");
+  const handleLogout = () => navigate("/login");
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
