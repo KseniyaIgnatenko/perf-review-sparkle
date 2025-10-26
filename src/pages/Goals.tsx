@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, CheckCircle2, Clock, FileEdit } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Task {
@@ -364,48 +365,35 @@ export default function Goals() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <Badge variant="outline" className="text-base px-4 py-2">
-            {goals.length} целей
-          </Badge>
-          <div className="flex gap-2 flex-wrap">
-            <Button 
-              variant={filter === "all" ? "default" : "ghost"} 
-              size="sm"
-              onClick={() => setFilter("all")}
-            >
-              Все ({statusCounts.all})
-            </Button>
-            <Button 
-              variant={filter === "draft" ? "default" : "ghost"} 
-              size="sm"
-              onClick={() => setFilter("draft")}
-            >
-              Черновики ({statusCounts.draft})
-            </Button>
-            <Button 
-              variant={filter === "pending" ? "default" : "ghost"} 
-              size="sm"
-              onClick={() => setFilter("pending")}
-            >
-              На проверке ({statusCounts.pending})
-            </Button>
-            <Button 
-              variant={filter === "approved" ? "default" : "ghost"} 
-              size="sm"
-              onClick={() => setFilter("approved")}
-            >
-              Утвержденные ({statusCounts.approved})
-            </Button>
-            <Button 
-              variant={filter === "completed" ? "default" : "ghost"} 
-              size="sm"
-              onClick={() => setFilter("completed")}
-            >
-              Завершенные ({statusCounts.completed})
-            </Button>
-          </div>
-        </div>
+        <Tabs value={filter} onValueChange={(value) => setFilter(value as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+            <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <ListTodo className="w-4 h-4" />
+              <span className="hidden sm:inline">Все</span>
+              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.all}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="draft" className="gap-1.5">
+              <FileEdit className="w-4 h-4" />
+              <span className="hidden sm:inline">Черновики</span>
+              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.draft}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="gap-1.5">
+              <Clock className="w-4 h-4" />
+              <span className="hidden sm:inline">На проверке</span>
+              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.pending}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="approved" className="gap-1.5">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Утверждены</span>
+              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.approved}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="gap-1.5">
+              <Archive className="w-4 h-4" />
+              <span className="hidden sm:inline">Завершены</span>
+              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.completed}</Badge>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredGoals.map((goal) => {
