@@ -97,10 +97,10 @@ export default function PeerReview() {
         <div className="mb-8">
           <h1 className="mb-2 flex items-center gap-2">
             <Users className="w-8 h-8 text-primary" />
-            Оценка коллег
+            Взаимная оценка
           </h1>
           <p className="text-muted-foreground text-lg">
-            Оцените работу ваших коллег по запросам на обратную связь
+            Оценивайте коллег и отслеживайте, кто оценивает вас
           </p>
         </div>
 
@@ -118,7 +118,17 @@ export default function PeerReview() {
             </TabsList>
 
             <TabsContent value="to-review" className="space-y-4">
-              <h2 className="text-xl font-semibold">Коллеги, которых мне нужно оценить</h2>
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Запросы на мою оценку</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Коллеги, которые ждут вашей обратной связи
+                  </p>
+                </div>
+                <Badge variant="destructive" className="text-base px-3 py-1">
+                  {requestsToReview.filter(r => r.status === "pending").length} ожидают
+                </Badge>
+              </div>
               {requestsToReview.map((request) => (
                 <Card key={request.id} className="shadow-card">
                   <CardHeader>
@@ -150,7 +160,12 @@ export default function PeerReview() {
             </TabsContent>
 
             <TabsContent value="for-me" className="space-y-4">
-              <h2 className="text-xl font-semibold">Коллеги, которые оценивают меня</h2>
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold">Кто оценивает меня</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Коллеги, которых я попросил оценить мою работу
+                </p>
+              </div>
               {requestsForMe.map((request) => (
                 <Card key={request.id} className="shadow-card">
                   <CardHeader>

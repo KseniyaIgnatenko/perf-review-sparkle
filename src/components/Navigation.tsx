@@ -8,7 +8,7 @@ const navItems = [
   { icon: Home, label: "Главная", path: "/dashboard" },
   { icon: Target, label: "Мои цели", path: "/goals" },
   { icon: ClipboardList, label: "Самооценка", path: "/self-assessment" },
-  { icon: Users, label: "Оценка коллег", path: "/peer-review", badge: 2 },
+  { icon: Users, label: "Оценка коллег", path: "/peer-review", badge: 2, badgeTooltip: "Ожидают вашей оценки" },
   { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics" },
   { icon: FileText, label: "Отчеты", path: "/reports" },
 ];
@@ -49,7 +49,10 @@ export const Navigation = () => {
                     <Icon className="w-4 h-4" />
                     <span className="text-sm font-medium">{item.label}</span>
                     {item.badge && (
-                      <Badge className="ml-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-destructive-foreground">
+                      <Badge 
+                        className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5 bg-destructive text-destructive-foreground"
+                        title={item.badgeTooltip || ""}
+                      >
                         {item.badge}
                       </Badge>
                     )}
