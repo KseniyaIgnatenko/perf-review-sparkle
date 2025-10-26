@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Users, Send, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Send, Clock, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PeerRequest {
@@ -18,7 +19,9 @@ interface PeerRequest {
 
 export default function PeerReview() {
   const { toast } = useToast();
-  const [requests] = useState<PeerRequest[]>([
+  
+  // Запросы, где я оцениваю других
+  const [requestsToReview] = useState<PeerRequest[]>([
     {
       id: "1",
       employeeName: "Иванов Иван",
@@ -32,6 +35,24 @@ export default function PeerReview() {
       goalTitle: "Оптимизация производительности системы",
       status: "pending",
       dueDate: "2024-12-20",
+    },
+  ]);
+
+  // Запросы, где меня оценивают другие
+  const [requestsForMe] = useState<PeerRequest[]>([
+    {
+      id: "3",
+      employeeName: "Сидоров Петр",
+      goalTitle: "Внедрение новой системы мониторинга",
+      status: "completed",
+      dueDate: "2024-12-10",
+    },
+    {
+      id: "4",
+      employeeName: "Козлова Анна",
+      goalTitle: "Улучшение процессов команды",
+      status: "pending",
+      dueDate: "2024-12-18",
     },
   ]);
 
@@ -84,37 +105,75 @@ export default function PeerReview() {
         </div>
 
         {!selectedRequest ? (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Запросы на оценку</h2>
-            {requests.map((request) => (
-              <Card key={request.id} className="shadow-card">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle>{request.employeeName}</CardTitle>
-                      <CardDescription>{request.goalTitle}</CardDescription>
+          <Tabs defaultValue="to-review" className="space-y-4">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="to-review" className="gap-2">
+                <Users className="w-4 h-4" />
+                Я оцениваю
+              </TabsTrigger>
+              <TabsTrigger value="for-me" className="gap-2">
+                <UserCheck className="w-4 h-4" />
+                Меня оценивают
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="to-review" className="space-y-4">
+              <h2 className="text-xl font-semibold">Коллеги, которых мне нужно оценить</h2>
+              {requestsToReview.map((request) => (
+                <Card key={request.id} className="shadow-card">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle>{request.employeeName}</CardTitle>
+                        <CardDescription>{request.goalTitle}</CardDescription>
+                      </div>
+                      <Badge variant={request.status === "completed" ? "default" : "secondary"}>
+                        {request.status === "completed" ? "Завершено" : "Ожидает"}
+                      </Badge>
                     </div>
-                    <Badge variant={request.status === "completed" ? "default" : "secondary"}>
-                      {request.status === "completed" ? "Завершено" : "Ожидает"}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        Срок: {new Date(request.dueDate).toLocaleDateString("ru-RU")}
+                      </div>
+                      {request.status === "pending" && (
+                        <Button onClick={() => setSelectedRequest(request)}>
+                          Оценить
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+
+            <TabsContent value="for-me" className="space-y-4">
+              <h2 className="text-xl font-semibold">Коллеги, которые оценивают меня</h2>
+              {requestsForMe.map((request) => (
+                <Card key={request.id} className="shadow-card">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle>{request.employeeName}</CardTitle>
+                        <CardDescription>{request.goalTitle}</CardDescription>
+                      </div>
+                      <Badge variant={request.status === "completed" ? "default" : "secondary"}>
+                        {request.status === "completed" ? "Получена" : "Ожидается"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       Срок: {new Date(request.dueDate).toLocaleDateString("ru-RU")}
                     </div>
-                    {request.status === "pending" && (
-                      <Button onClick={() => setSelectedRequest(request)}>
-                        Оценить
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+          </Tabs>
         ) : (
           <div className="space-y-6">
             <Button variant="ghost" onClick={() => setSelectedRequest(null)}>
