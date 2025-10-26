@@ -18,9 +18,12 @@ interface Goal {
   id: number;
   title: string;
   deadline: string;
+  deadlineDate: string; // формат YYYY-MM-DD для отслеживания
   results: string;
   tasks: Task[];
-  status: "draft" | "pending" | "approved";
+  completedTasks: number; // количество выполненных задач
+  status: "draft" | "pending" | "approved" | "completed";
+  progress: number; // процент выполнения 0-100
 }
 
 const existingGoals: Goal[] = [
@@ -28,36 +31,60 @@ const existingGoals: Goal[] = [
     id: 1,
     title: "Повышение качества кода",
     deadline: "Q4 2024",
+    deadlineDate: "2024-12-31",
     results: "Снижение количества багов на 30%, улучшение покрытия тестами до 80%",
     tasks: [
       { id: "1", text: "Внедрить code review процесс" },
       { id: "2", text: "Настроить автоматические тесты" },
       { id: "3", text: "Провести рефакторинг legacy кода" },
     ],
+    completedTasks: 2,
     status: "approved",
+    progress: 75,
   },
   {
     id: 2,
     title: "Развитие лидерских навыков",
     deadline: "до 31 декабря",
+    deadlineDate: "2024-12-31",
     results: "Успешно провести 2 воркшопа, менторить 2 junior разработчиков",
     tasks: [
       { id: "1", text: "Подготовить материалы для воркшопов" },
       { id: "2", text: "Составить план менторства" },
       { id: "3", text: "Получить обратную связь от команды" },
     ],
+    completedTasks: 2,
     status: "approved",
+    progress: 50,
   },
   {
     id: 3,
     title: "Оптимизация процессов разработки",
     deadline: "Q1 2025",
+    deadlineDate: "2025-03-31",
     results: "Сократить время деплоя на 40%, автоматизировать рутинные задачи",
     tasks: [
       { id: "1", text: "Настроить CI/CD пайплайн" },
       { id: "2", text: "Внедрить автоматизацию тестирования" },
     ],
+    completedTasks: 0,
     status: "pending",
+    progress: 30,
+  },
+  {
+    id: 4,
+    title: "Улучшение документации проекта",
+    deadline: "Q3 2024",
+    deadlineDate: "2024-09-30",
+    results: "Полная документация API, обучающие материалы для новых разработчиков",
+    tasks: [
+      { id: "1", text: "Написать документацию API" },
+      { id: "2", text: "Создать onboarding guide" },
+      { id: "3", text: "Записать обучающие видео" },
+    ],
+    completedTasks: 3,
+    status: "completed",
+    progress: 100,
   },
 ];
 
@@ -65,6 +92,7 @@ export default function Goals() {
   const [goals, setGoals] = useState<Goal[]>(existingGoals);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"all" | "draft" | "pending" | "approved" | "completed">("all");
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -82,6 +110,19 @@ export default function Goals() {
     draft: { label: "Черновик", color: "bg-warning text-warning-foreground", icon: FileEdit },
     pending: { label: "На проверке", color: "bg-primary text-primary-foreground", icon: Clock },
     approved: { label: "Утверждена", color: "bg-success text-success-foreground", icon: CheckCircle2 },
+    completed: { label: "Завершена", color: "bg-muted text-muted-foreground", icon: CheckCircle2 },
+  };
+
+  const filteredGoals = filter === "all" 
+    ? goals 
+    : goals.filter(goal => goal.status === filter);
+
+  const statusCounts = {
+    all: goals.length,
+    draft: goals.filter(g => g.status === "draft").length,
+    pending: goals.filter(g => g.status === "pending").length,
+    approved: goals.filter(g => g.status === "approved").length,
+    completed: goals.filter(g => g.status === "completed").length,
   };
 
   const handleAddTask = () => {
@@ -186,16 +227,29 @@ export default function Goals() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="deadline">
-                  Сроки <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="deadline"
-                  placeholder="Например: Q2 2024, до 31 декабря"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="deadline">
+                    Сроки <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="deadline"
+                    placeholder="Например: Q2 2024"
+                    value={formData.deadline}
+                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deadlineDate">
+                    Точная дата <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="deadlineDate"
+                    type="date"
+                    placeholder="Выберите дату"
+                    className="w-full"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -310,20 +364,51 @@ export default function Goals() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <Badge variant="outline" className="text-base px-4 py-2">
-            {goals.length} из 5 целей
+            {goals.length} целей
           </Badge>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">Все</Button>
-            <Button variant="ghost" size="sm">Черновики</Button>
-            <Button variant="ghost" size="sm">На проверке</Button>
-            <Button variant="ghost" size="sm">Утвержденные</Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant={filter === "all" ? "default" : "ghost"} 
+              size="sm"
+              onClick={() => setFilter("all")}
+            >
+              Все ({statusCounts.all})
+            </Button>
+            <Button 
+              variant={filter === "draft" ? "default" : "ghost"} 
+              size="sm"
+              onClick={() => setFilter("draft")}
+            >
+              Черновики ({statusCounts.draft})
+            </Button>
+            <Button 
+              variant={filter === "pending" ? "default" : "ghost"} 
+              size="sm"
+              onClick={() => setFilter("pending")}
+            >
+              На проверке ({statusCounts.pending})
+            </Button>
+            <Button 
+              variant={filter === "approved" ? "default" : "ghost"} 
+              size="sm"
+              onClick={() => setFilter("approved")}
+            >
+              Утвержденные ({statusCounts.approved})
+            </Button>
+            <Button 
+              variant={filter === "completed" ? "default" : "ghost"} 
+              size="sm"
+              onClick={() => setFilter("completed")}
+            >
+              Завершенные ({statusCounts.completed})
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {goals.map((goal) => {
+          {filteredGoals.map((goal) => {
             const config = statusConfig[goal.status];
             const StatusIcon = config.icon;
             
@@ -339,11 +424,27 @@ export default function Goals() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Срок:</span>
                       <span className="font-medium">{goal.deadline}</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Прогресс выполнения</span>
+                        <span className="font-semibold text-primary">{goal.progress}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-smooth"
+                          style={{ width: `${goal.progress}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {goal.completedTasks} из {goal.tasks.length} задач выполнено
+                      </div>
                     </div>
                   </div>
 
@@ -379,6 +480,17 @@ export default function Goals() {
             );
           })}
         </div>
+
+        {filteredGoals.length === 0 && goals.length > 0 && (
+          <Card className="shadow-card">
+            <CardContent className="py-16 text-center">
+              <h3 className="text-xl font-semibold mb-2">Нет целей с таким статусом</h3>
+              <p className="text-muted-foreground">
+                Попробуйте выбрать другой фильтр
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {goals.length === 0 && (
           <Card className="shadow-card">
