@@ -7,6 +7,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Missing authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -17,6 +27,30 @@ Deno.serve(async (req) => {
         }
       }
     )
+
+    // Verify token and get user
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Invalid token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Check if user has admin role
+    const { data: roleData, error: adminRoleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single()
+
+    if (adminRoleError || !roleData) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden: Admin role required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
 
     // 1. Проверяем, существует ли уже пользователь с таким email
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
@@ -60,6 +94,18 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       throw new Error(`Failed to update profile: ${profileError.message}`)
+    }
+
+    // 2.5. Ensure employee role is set in user_roles table
+    const { error: setRoleError } = await supabaseAdmin
+      .from('user_roles')
+      .upsert({
+        user_id: userId,
+        role: 'employee'
+      })
+
+    if (setRoleError) {
+      throw new Error(`Failed to set user role: ${setRoleError.message}`)
     }
 
     // 3. Создаем тестовую цель
@@ -110,11 +156,8 @@ Deno.serve(async (req) => {
           user: {
             id: userId,
             email: 'employee@wink.ru',
-            full_name: 'Сидоров Иван Петрович'
-          },
-          credentials: {
-            email: 'employee@wink.ru',
-            password: 'Test123!'
+            full_name: 'Сидоров Иван Петрович',
+            is_new: isNewUser
           },
           goal: {
             id: goalData.id,

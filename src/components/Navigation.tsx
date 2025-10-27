@@ -4,15 +4,12 @@ import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useProfiles";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 export const Navigation = () => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { profile } = useProfile();
-
-  const isManager = profile?.role === 'manager';
-  const isHR = profile?.role === 'hr' || profile?.role === 'admin';
+  const { hasRole, isManager, isHR } = useUserRoles();
 
   const navItems = [
     { icon: Home, label: "Главная", path: "/dashboard", roles: ['employee', 'manager', 'hr', 'admin'] },
@@ -24,9 +21,9 @@ export const Navigation = () => {
     { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'] },
   ];
 
-  const visibleNavItems = navItems.filter(item => 
-    !item.roles || item.roles.includes(profile?.role || 'employee')
-  );
+  const visibleNavItems = navItems.filter(item => {
+    return item.roles.some(role => hasRole(role as any));
+  });
   
   const handleLogout = () => signOut();
 
