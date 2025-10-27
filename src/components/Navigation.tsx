@@ -1,8 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck } from "lucide-react";
+import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck, User } from "lucide-react";
 import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfiles";
@@ -65,15 +64,28 @@ export const Navigation = () => {
             </div>
           </div>
 
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-2" 
-            onClick={handleLogout}
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden md:inline">Выйти</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link to="/profile">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden md:inline">Профиль</span>
+              </Button>
+            </Link>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2" 
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden md:inline">Выйти</span>
+            </Button>
+          </div>
         </div>
       </div>
     </nav>

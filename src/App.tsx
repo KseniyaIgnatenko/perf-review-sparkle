@@ -14,6 +14,7 @@ import PeerReview from "./pages/PeerReview";
 import Manager from "./pages/Manager";
 import HRAnalytics from "./pages/HRAnalytics";
 import Reports from "./pages/Reports";
+import Profile from "./pages/Profile";
 import TestSetup from "./pages/TestSetup";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/manager" element={<ProtectedRoute><Manager /></ProtectedRoute>} />
             <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/test-setup" element={<TestSetup />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
