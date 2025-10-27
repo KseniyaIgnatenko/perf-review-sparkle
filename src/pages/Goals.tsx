@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGoals, useGoalTasks } from "@/hooks/useGoals";
@@ -14,6 +15,82 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
 import { getProgressColor, getProgressBarColor } from "@/utils/progressHelpers";
+
+const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
+  const { tasks, isLoading, addTask, updateTask } = useGoalTasks(goalId);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [isAddingTask, setIsAddingTask] = useState(false);
+
+  const handleAddTask = async () => {
+    if (!newTaskTitle.trim()) return;
+    await addTask({ goalId, title: newTaskTitle, is_done: false });
+    setNewTaskTitle("");
+    setIsAddingTask(false);
+  };
+
+  const handleToggleTask = async (taskId: string, isDone: boolean) => {
+    await updateTask({ taskId, is_done: !isDone });
+  };
+
+  if (isLoading) {
+    return <Skeleton className="h-20" />;
+  }
+
+  const isDraft = status === 'draft';
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-muted-foreground">Задачи</p>
+      {tasks.length === 0 && !isAddingTask && (
+        <p className="text-sm text-muted-foreground">Нет задач</p>
+      )}
+      <div className="space-y-2">
+        {tasks.map((task) => (
+          <div key={task.id} className="flex items-center gap-2 p-2 rounded border">
+            <Checkbox
+              checked={task.is_done}
+              onCheckedChange={() => handleToggleTask(task.id, task.is_done)}
+              disabled={!isDraft}
+            />
+            <span className={cn("text-sm flex-1", task.is_done && "line-through text-muted-foreground")}>
+              {task.title}
+            </span>
+          </div>
+        ))}
+        {isAddingTask && (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Название задачи"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+            />
+            <Button size="sm" onClick={handleAddTask}>
+              Добавить
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => {
+              setIsAddingTask(false);
+              setNewTaskTitle("");
+            }}>
+              Отмена
+            </Button>
+          </div>
+        )}
+      </div>
+      {isDraft && !isAddingTask && tasks.length < 3 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsAddingTask(true)}
+          className="gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Добавить задачу
+        </Button>
+      )}
+    </div>
+  );
+};
 
 type GoalStatus = 'draft' | 'on_review' | 'approved' | 'completed';
 
@@ -318,6 +395,8 @@ export default function Goals() {
                         <p className="text-sm leading-relaxed">{goal.description}</p>
                       </div>
                     )}
+
+                    <GoalTasks goalId={goal.id} status={goal.status} />
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">

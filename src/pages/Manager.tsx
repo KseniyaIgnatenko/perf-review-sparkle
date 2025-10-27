@@ -4,12 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ClipboardCheck, TrendingUp, Users, AlertCircle, CheckCircle, XCircle, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useTeamMembers } from "@/hooks/useManager";
 import { useManagerGoals } from "@/hooks/useManagerGoals";
+import { useGoalTasks } from "@/hooks/useGoals";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+
+const GoalTasksView = ({ goalId }: { goalId: string }) => {
+  const { tasks, isLoading } = useGoalTasks(goalId);
+
+  if (isLoading) {
+    return <Skeleton className="h-16" />;
+  }
+
+  if (tasks.length === 0) {
+    return <p className="text-sm text-muted-foreground">Нет задач</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-muted-foreground">Задачи:</p>
+      <div className="space-y-1">
+        {tasks.map((task) => (
+          <div key={task.id} className="flex items-center gap-2 text-sm">
+            <Checkbox checked={task.is_done} disabled />
+            <span className={cn(task.is_done && "line-through text-muted-foreground")}>
+              {task.title}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function Manager() {
   const { teamMembers, isLoading } = useTeamMembers();
@@ -146,12 +177,13 @@ export default function Manager() {
                         {goal.description && (
                           <p className="text-sm leading-relaxed mb-2">{goal.description}</p>
                         )}
-                        <div className="flex gap-4 text-xs text-muted-foreground">
+                        <div className="flex gap-4 text-xs text-muted-foreground mb-3">
                           {goal.period && <span>Период: {goal.period}</span>}
                           {goal.due_date && (
                             <span>Срок: {new Date(goal.due_date).toLocaleDateString()}</span>
                           )}
                         </div>
+                        <GoalTasksView goalId={goal.id} />
                       </div>
                     </div>
                     <Separator />
