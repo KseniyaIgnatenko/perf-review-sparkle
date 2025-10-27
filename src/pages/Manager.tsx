@@ -143,23 +143,35 @@ export default function Manager() {
         </div>
 
         {/* Goals Approval Section */}
-        {goalsToReviewCount > 0 && (
-          <Card className="shadow-card mb-8">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Цели на утверждение
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {goalsToReviewCount} {goalsToReviewCount === 1 ? 'цель требует' : 'целей требуют'} вашего утверждения
-                  </CardDescription>
-                </div>
+        <Card className="shadow-card mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Цели на утверждение
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  {goalsToReviewCount === 0 
+                    ? 'Нет целей, ожидающих утверждения' 
+                    : `${goalsToReviewCount} ${goalsToReviewCount === 1 ? 'цель требует' : 'целей требуют'} вашего утверждения`
+                  }
+                </CardDescription>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {goals
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingGoals ? (
+              <Skeleton className="h-32" />
+            ) : goalsToReviewCount === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  Все цели проверены
+                </p>
+              </div>
+            ) : (
+              goals
                 .filter((goal) => goal.status === "on_review")
                 .map((goal) => (
                   <div key={goal.id} className="border rounded-lg p-4 space-y-3">
@@ -209,10 +221,10 @@ export default function Manager() {
                       </Button>
                     </div>
                   </div>
-                ))}
-            </CardContent>
-          </Card>
-        )}
+                ))
+            )}
+          </CardContent>
+        </Card>
 
         {/* Employees List */}
         <Tabs defaultValue="all" className="space-y-4">
