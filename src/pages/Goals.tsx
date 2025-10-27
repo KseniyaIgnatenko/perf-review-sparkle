@@ -23,13 +23,13 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
 
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) return;
-    await addTask({ goalId, title: newTaskTitle, is_done: false });
+    await addTask({ goalId, title: newTaskTitle });
     setNewTaskTitle("");
     setIsAddingTask(false);
   };
 
   const handleToggleTask = async (taskId: string, isDone: boolean) => {
-    await updateTask({ taskId, is_done: !isDone });
+    await updateTask({ id: taskId, is_done: !isDone });
   };
 
   if (isLoading) {
