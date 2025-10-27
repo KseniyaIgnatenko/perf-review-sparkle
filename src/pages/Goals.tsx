@@ -9,332 +9,220 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGoals, useGoalTasks } from "@/hooks/useGoals";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/EmptyState";
+import { cn } from "@/lib/utils";
+import { getProgressColor, getProgressBarColor } from "@/utils/progressHelpers";
 
-interface Task {
-  id: string;
-  text: string;
-}
-
-interface Goal {
-  id: number;
-  title: string;
-  deadline: string;
-  deadlineDate: string; // формат YYYY-MM-DD для отслеживания
-  results: string;
-  tasks: Task[];
-  completedTasks: number; // количество выполненных задач
-  status: "draft" | "pending" | "approved" | "completed";
-  progress: number; // процент выполнения 0-100
-}
-
-const existingGoals: Goal[] = [
-  {
-    id: 1,
-    title: "Повышение качества кода",
-    deadline: "Q4 2024",
-    deadlineDate: "2024-12-31",
-    results: "Снижение количества багов на 30%, улучшение покрытия тестами до 80%",
-    tasks: [
-      { id: "1", text: "Внедрить code review процесс" },
-      { id: "2", text: "Настроить автоматические тесты" },
-      { id: "3", text: "Провести рефакторинг legacy кода" },
-    ],
-    completedTasks: 2,
-    status: "approved",
-    progress: 75,
-  },
-  {
-    id: 2,
-    title: "Развитие лидерских навыков",
-    deadline: "до 31 декабря",
-    deadlineDate: "2024-12-31",
-    results: "Успешно провести 2 воркшопа, менторить 2 junior разработчиков",
-    tasks: [
-      { id: "1", text: "Подготовить материалы для воркшопов" },
-      { id: "2", text: "Составить план менторства" },
-      { id: "3", text: "Получить обратную связь от команды" },
-    ],
-    completedTasks: 2,
-    status: "approved",
-    progress: 50,
-  },
-  {
-    id: 3,
-    title: "Оптимизация процессов разработки",
-    deadline: "Q1 2025",
-    deadlineDate: "2025-03-31",
-    results: "Сократить время деплоя на 40%, автоматизировать рутинные задачи",
-    tasks: [
-      { id: "1", text: "Настроить CI/CD пайплайн" },
-      { id: "2", text: "Внедрить автоматизацию тестирования" },
-    ],
-    completedTasks: 0,
-    status: "pending",
-    progress: 30,
-  },
-  {
-    id: 4,
-    title: "Улучшение документации проекта",
-    deadline: "Q3 2024",
-    deadlineDate: "2024-09-30",
-    results: "Полная документация API, обучающие материалы для новых разработчиков",
-    tasks: [
-      { id: "1", text: "Написать документацию API" },
-      { id: "2", text: "Создать onboarding guide" },
-      { id: "3", text: "Записать обучающие видео" },
-    ],
-    completedTasks: 3,
-    status: "completed",
-    progress: 100,
-  },
-];
+type GoalStatus = 'draft' | 'on_review' | 'approved' | 'completed';
 
 export default function Goals() {
-  const [goals, setGoals] = useState<Goal[]>(existingGoals);
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"all" | "draft" | "pending" | "approved" | "completed">("all");
+  const { goals, isLoading, createGoal, updateGoal, deleteGoal, isCreating, isUpdating } = useGoals();
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | GoalStatus>("all");
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     title: "",
     deadline: "",
-    results: "",
-    tasks: [
-      { id: "1", text: "" },
-      { id: "2", text: "" },
-      { id: "3", text: "" },
-    ],
+    description: "",
+    period: "",
   });
 
   const statusConfig = {
-    draft: { label: "Черновик", color: "bg-warning text-warning-foreground", icon: FileEdit },
-    pending: { label: "На проверке", color: "bg-primary text-primary-foreground", icon: Clock },
-    approved: { label: "Утверждена", color: "bg-success text-success-foreground", icon: CheckCircle2 },
-    completed: { label: "Завершена", color: "bg-muted text-muted-foreground", icon: CheckCircle2 },
+    draft: { label: "Черновик", variant: "secondary" as const, icon: FileEdit },
+    on_review: { label: "На проверке", variant: "default" as const, icon: Clock },
+    approved: { label: "Утверждена", variant: "outline" as const, icon: CheckCircle2 },
+    completed: { label: "Завершена", variant: "outline" as const, icon: Archive },
   };
 
-  const filteredGoals = filter === "all" 
-    ? goals 
-    : goals.filter(goal => goal.status === filter);
+  const filteredGoals = filter === "all" ? goals : goals.filter((g) => g.status === filter);
 
   const statusCounts = {
     all: goals.length,
-    draft: goals.filter(g => g.status === "draft").length,
-    pending: goals.filter(g => g.status === "pending").length,
-    approved: goals.filter(g => g.status === "approved").length,
-    completed: goals.filter(g => g.status === "completed").length,
-  };
-
-  const handleAddTask = () => {
-    if (formData.tasks.length < 10) {
-      setFormData({
-        ...formData,
-        tasks: [...formData.tasks, { id: Date.now().toString(), text: "" }],
-      });
-    }
-  };
-
-  const handleRemoveTask = (id: string) => {
-    if (formData.tasks.length > 3) {
-      setFormData({
-        ...formData,
-        tasks: formData.tasks.filter((task) => task.id !== id),
-      });
-    }
-  };
-
-  const handleTaskChange = (id: string, text: string) => {
-    setFormData({
-      ...formData,
-      tasks: formData.tasks.map((task) =>
-        task.id === id ? { ...task, text } : task
-      ),
-    });
+    draft: goals.filter((g) => g.status === "draft").length,
+    on_review: goals.filter((g) => g.status === "on_review").length,
+    approved: goals.filter((g) => g.status === "approved").length,
+    completed: goals.filter((g) => g.status === "completed").length,
   };
 
   const handleSaveDraft = () => {
-    toast({
-      title: "Черновик сохранен",
-      description: "Цель сохранена как черновик",
-    });
+    if (!formData.title.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, заполните название цели",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editingId) {
+      updateGoal({
+        id: editingId,
+        title: formData.title,
+        description: formData.description,
+        due_date: formData.deadline || null,
+        period: formData.period || null,
+        status: 'draft',
+      });
+    } else {
+      createGoal({
+        title: formData.title,
+        description: formData.description,
+        due_date: formData.deadline || null,
+        period: formData.period || null,
+        status: 'draft',
+      });
+    }
+
+    setFormData({ title: "", deadline: "", description: "", period: "" });
+    setIsCreatingNew(false);
+    setEditingId(null);
   };
 
   const handleSubmit = () => {
-    if (!formData.title.trim() || !formData.deadline.trim() || !formData.results.trim()) {
+    if (!formData.title.trim() || !formData.description.trim()) {
       toast({
-        variant: "destructive",
         title: "Ошибка",
-        description: "Заполните все обязательные поля",
+        description: "Пожалуйста, заполните все обязательные поля",
+        variant: "destructive",
       });
       return;
     }
 
-    const emptyTasks = formData.tasks.filter((task) => !task.text.trim());
-    if (emptyTasks.length > 0) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Заполните все задачи или удалите пустые",
+    if (editingId) {
+      updateGoal({
+        id: editingId,
+        title: formData.title,
+        description: formData.description,
+        due_date: formData.deadline || null,
+        period: formData.period || null,
+        status: 'on_review',
       });
-      return;
+    } else {
+      createGoal({
+        title: formData.title,
+        description: formData.description,
+        due_date: formData.deadline || null,
+        period: formData.period || null,
+        status: 'on_review',
+      });
     }
 
-    toast({
-      title: "Цель отправлена",
-      description: "Цель отправлена руководителю на утверждение",
-    });
-    setIsCreating(false);
-    setFormData({
-      title: "",
-      deadline: "",
-      results: "",
-      tasks: [
-        { id: "1", text: "" },
-        { id: "2", text: "" },
-        { id: "3", text: "" },
-      ],
-    });
+    setFormData({ title: "", deadline: "", description: "", period: "" });
+    setIsCreatingNew(false);
+    setEditingId(null);
   };
 
-  if (isCreating || editingId) {
+  const handleEdit = (goal: typeof goals[0]) => {
+    setEditingId(goal.id);
+    setFormData({
+      title: goal.title,
+      deadline: goal.due_date || "",
+      description: goal.description || "",
+      period: goal.period || "",
+    });
+    setIsCreatingNew(true);
+  };
+
+  const handleCancel = () => {
+    setFormData({ title: "", deadline: "", description: "", period: "" });
+    setIsCreatingNew(false);
+    setEditingId(null);
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main className="max-w-4xl mx-auto px-6 py-8">
+        <main className="container mx-auto px-4 py-8">
+          <Skeleton className="h-12 w-64 mb-8" />
+          <div className="space-y-4">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (isCreatingNew || editingId) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">
+              {editingId ? "Редактировать цель" : "Создание новой цели"}
+            </h1>
+            <p className="text-muted-foreground">
+              {editingId ? "Внесите изменения в вашу цель" : "Определите ваши цели на период оценки"}
+            </p>
+          </div>
+
           <Card className="shadow-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>
-                  {editingId ? "Редактирование цели" : "Создание новой цели"}
-                </CardTitle>
-                <Badge variant="outline">Цель {goals.length + 1} из 5</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="pt-6 space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title">
-                  Название цели <span className="text-destructive">*</span>
-                </Label>
+                <Label htmlFor="title">Название цели *</Label>
                 <Input
                   id="title"
                   placeholder="Например: Повышение качества кода"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  maxLength={100}
                 />
-                <p className="text-xs text-muted-foreground text-right">
-                  {formData.title.length}/100
-                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="deadline">
-                    Сроки <span className="text-destructive">*</span>
-                  </Label>
+                  <Label htmlFor="deadline">Срок выполнения</Label>
                   <Input
                     id="deadline"
-                    placeholder="Например: Q2 2024"
+                    type="date"
                     value={formData.deadline}
                     onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadlineDate">
-                    Точная дата <span className="text-destructive">*</span>
-                  </Label>
+                  <Label htmlFor="period">Период</Label>
                   <Input
-                    id="deadlineDate"
-                    type="date"
-                    placeholder="Выберите дату"
-                    className="w-full"
+                    id="period"
+                    placeholder="Например: Q4 2024"
+                    value={formData.period}
+                    onChange={(e) => setFormData({ ...formData, period: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="results">
-                  Ожидаемые результаты <span className="text-destructive">*</span>
-                </Label>
+                <Label htmlFor="description">Описание и ожидаемые результаты *</Label>
                 <Textarea
-                  id="results"
-                  placeholder="Опишите конкретные измеримые результаты..."
-                  value={formData.results}
-                  onChange={(e) => setFormData({ ...formData, results: e.target.value })}
-                  maxLength={500}
-                  rows={4}
+                  id="description"
+                  placeholder="Опишите цель и результаты, которых хотите достичь..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={6}
                 />
-                <p className="text-xs text-muted-foreground text-right">
-                  {formData.results.length}/500
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>
-                    Ключевые задачи <span className="text-destructive">*</span>
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddTask}
-                    disabled={formData.tasks.length >= 10}
-                    className="gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Добавить задачу
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {formData.tasks.map((task, index) => (
-                    <div key={task.id} className="flex gap-2">
-                      <div className="flex-1">
-                        <Input
-                          placeholder={`Задача ${index + 1}`}
-                          value={task.text}
-                          onChange={(e) => handleTaskChange(task.id, e.target.value)}
-                        />
-                      </div>
-                      {formData.tasks.length > 3 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveTask(task.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Минимум 3 задачи, максимум 10
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsCreating(false);
-                    setEditingId(null);
-                  }}
-                  className="flex-1"
-                >
-                  Отмена
+              <div className="flex gap-3 justify-end">
+                <Button variant="ghost" onClick={handleCancel}>
+                  Отменить
                 </Button>
-                <Button
-                  variant="secondary"
+                <Button 
+                  variant="outline" 
                   onClick={handleSaveDraft}
-                  className="flex-1"
+                  disabled={isCreating || isUpdating}
                 >
                   Сохранить черновик
                 </Button>
-                <Button onClick={handleSubmit} className="flex-1 gradient-primary">
-                  Отправить руководителю
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={isCreating || isUpdating}
+                >
+                  Отправить на утверждение
                 </Button>
               </div>
             </CardContent>
@@ -347,157 +235,131 @@ export default function Goals() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex items-center justify-between">
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-4xl font-bold">Мои цели</h1>
-            <p className="text-muted-foreground text-lg mt-2">
-              Управление целями на текущий период оценки
+            <h1 className="flex items-center gap-2 mb-2">
+              <ListTodo className="w-8 h-8 text-primary" />
+              Мои цели
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Управление вашими целями и задачами
             </p>
           </div>
-          <Button
-            onClick={() => setIsCreating(true)}
-            disabled={goals.length >= 5}
-            className="gap-2 gradient-primary"
-          >
-            <Plus className="w-5 h-5" />
+          <Button className="gap-2" onClick={() => setIsCreatingNew(true)}>
+            <Plus className="w-4 h-4" />
             Добавить цель
           </Button>
         </div>
 
-        <Tabs value={filter} onValueChange={(value) => setFilter(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
-            <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <ListTodo className="w-4 h-4" />
-              <span className="hidden sm:inline">Все</span>
-              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.all}</Badge>
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)} className="mb-6">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+            <TabsTrigger value="all">
+              Все ({statusCounts.all})
             </TabsTrigger>
-            <TabsTrigger value="draft" className="gap-1.5">
-              <FileEdit className="w-4 h-4" />
-              <span className="hidden sm:inline">Черновики</span>
-              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.draft}</Badge>
+            <TabsTrigger value="draft">
+              Черновики ({statusCounts.draft})
             </TabsTrigger>
-            <TabsTrigger value="pending" className="gap-1.5">
-              <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">На проверке</span>
-              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.pending}</Badge>
+            <TabsTrigger value="on_review">
+              На проверке ({statusCounts.on_review})
             </TabsTrigger>
-            <TabsTrigger value="approved" className="gap-1.5">
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Утверждены</span>
-              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.approved}</Badge>
+            <TabsTrigger value="approved">
+              Утверждены ({statusCounts.approved})
             </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-1.5">
-              <Archive className="w-4 h-4" />
-              <span className="hidden sm:inline">Завершены</span>
-              <Badge variant="secondary" className="ml-1 bg-background/20">{statusCounts.completed}</Badge>
+            <TabsTrigger value="completed">
+              Завершены ({statusCounts.completed})
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredGoals.map((goal) => {
-            const config = statusConfig[goal.status];
-            const StatusIcon = config.icon;
-            
-            return (
-              <Card key={goal.id} className="shadow-card transition-smooth hover:shadow-lg">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <CardTitle className="text-xl">{goal.title}</CardTitle>
-                    <Badge className={config.color}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
-                      {config.label}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Срок:</span>
-                      <span className="font-medium">{goal.deadline}</span>
+        {filteredGoals.length === 0 ? (
+          <EmptyState
+            icon={<ListTodo className="w-8 h-8" />}
+            title="Нет целей"
+            description={
+              filter === "all"
+                ? "Создайте свою первую цель, чтобы начать"
+                : `Нет целей со статусом "${statusConfig[filter as GoalStatus]?.label}"`
+            }
+            onAction={filter === "all" ? () => setIsCreatingNew(true) : undefined}
+            actionLabel={filter === "all" ? "Создать цель" : undefined}
+          />
+        ) : (
+          <div className="grid gap-6">
+            {filteredGoals.map((goal) => {
+              const config = statusConfig[goal.status];
+              const Icon = config.icon;
+
+              return (
+                <Card key={goal.id} className="shadow-card hover:shadow-hover transition-smooth">
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-5 h-5 text-muted-foreground" />
+                          <CardTitle className="text-xl">{goal.title}</CardTitle>
+                        </div>
+                        {(goal.period || goal.due_date) && (
+                          <div className="flex gap-3 text-sm text-muted-foreground">
+                            {goal.period && <span>Период: {goal.period}</span>}
+                            {goal.due_date && <span>Срок: {new Date(goal.due_date).toLocaleDateString()}</span>}
+                          </div>
+                        )}
+                      </div>
+                      <Badge variant={config.variant}>{config.label}</Badge>
                     </div>
-                    
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {goal.description && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          Описание
+                        </p>
+                        <p className="text-sm leading-relaxed">{goal.description}</p>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Прогресс выполнения</span>
-                        <span className="font-semibold text-primary">{goal.progress}%</span>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Прогресс</span>
+                        <span className={cn("font-bold", getProgressColor(goal.progress))}>
+                          {goal.progress}%
+                        </span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-primary transition-smooth"
+                          className={cn(
+                            "h-full transition-smooth animate-progress-fill",
+                            getProgressBarColor(goal.progress)
+                          )}
                           style={{ width: `${goal.progress}%` }}
                         />
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {goal.completedTasks} из {goal.tasks.length} задач выполнено
-                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Ожидаемые результаты:</p>
-                    <p className="text-sm text-muted-foreground">{goal.results}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Ключевые задачи:</p>
-                    <ul className="space-y-1">
-                      {goal.tasks.map((task) => (
-                        <li key={task.id} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="text-primary mt-1">•</span>
-                          <span>{task.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Редактировать
-                    </Button>
-                    {goal.status === "draft" && (
-                      <Button variant="ghost" size="sm" className="text-destructive">
-                        Удалить
-                      </Button>
+                    {goal.status === 'draft' && (
+                      <div className="flex gap-2 justify-end pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(goal)}
+                        >
+                          Редактировать
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteGoal(goal.id)}
+                        >
+                          Удалить
+                        </Button>
+                      </div>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {filteredGoals.length === 0 && goals.length > 0 && (
-          <Card className="shadow-card">
-            <CardContent className="py-16 text-center">
-              <h3 className="text-xl font-semibold mb-2">Нет целей с таким статусом</h3>
-              <p className="text-muted-foreground">
-                Попробуйте выбрать другой фильтр
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {goals.length === 0 && (
-          <Card className="shadow-card">
-            <CardContent className="py-16 text-center">
-              <div className="w-16 h-16 mx-auto text-muted-foreground mb-4 flex items-center justify-center">
-                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Пока нет целей</h3>
-              <p className="text-muted-foreground mb-6">
-                Создайте свою первую цель для начала работы
-              </p>
-              <Button onClick={() => setIsCreating(true)} className="gap-2 gradient-primary">
-                <Plus className="w-5 h-5" />
-                Создать цель
-              </Button>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
       </main>
     </div>

@@ -9,6 +9,10 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getProgressColor, getProgressBarColor } from "@/utils/progressHelpers";
+import { useGoals } from "@/hooks/useGoals";
+import { usePeerReviews } from "@/hooks/usePeerReviews";
+import { useProfile } from "@/hooks/useProfiles";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const stages = [
   { label: "Цели", status: "in-progress" as const },
@@ -17,13 +21,39 @@ const stages = [
   { label: "Итоги", status: "not-started" as const },
 ];
 
-const recentGoals = [
-  { id: 1, title: "Повышение качества кода", progress: 75, approved: true },
-  { id: 2, title: "Развитие лидерских навыков", progress: 50, approved: true },
-  { id: 3, title: "Оптимизация процессов разработки", progress: 30, approved: false },
-];
-
 export default function Dashboard() {
+  const { goals, isLoading: goalsLoading } = useGoals();
+  const { reviewsToWrite, isLoading: reviewsLoading } = usePeerReviews();
+  const { profile, isLoading: profileLoading } = useProfile();
+
+  const isLoading = goalsLoading || reviewsLoading || profileLoading;
+
+  // Считаем статистику по целям
+  const approvedGoals = goals.filter(g => g.status === 'approved' || g.status === 'completed');
+  const totalGoals = goals.length;
+  const averageProgress = totalGoals > 0 
+    ? Math.round(goals.reduce((sum, g) => sum + g.progress, 0) / totalGoals)
+    : 0;
+
+  // Отзывы со статусом pending
+  const pendingReviews = reviewsToWrite.filter(r => r.status === 'pending');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Skeleton className="h-64 lg:col-span-2" />
+            <Skeleton className="h-64" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -31,7 +61,9 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Welcome Header */}
         <div className="space-y-3 animate-fade-in">
-          <h1 className="text-4xl font-bold">Добро пожаловать, Александр!</h1>
+          <h1 className="text-4xl font-bold">
+            Добро пожаловать, {profile?.full_name || 'Пользователь'}!
+          </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
             Отслеживайте прогресс и управляйте своим развитием
           </p>
@@ -56,13 +88,15 @@ export default function Dashboard() {
           <ProgressCard
             title="Мои цели"
             icon={<Target className="w-5 h-5" />}
-            progress={60}
-            status="in-progress"
+            progress={averageProgress}
+            status={totalGoals > 0 ? "in-progress" : "not-started"}
             className="lg:col-span-2"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">3 цели из 5</span>
+                <span className="text-sm text-muted-foreground">
+                  {approvedGoals.length} {approvedGoals.length === 1 ? 'цель' : 'целей'} утверждено
+                </span>
                 <Button size="sm" className="gap-2" asChild>
                   <Link to="/goals">
                     <Plus className="w-4 h-4" />
@@ -72,7 +106,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-3">
-                {recentGoals.map((goal) => (
+                {approvedGoals.slice(0, 3).map((goal) => (
                   <div
                     key={goal.id}
                     className="p-4 rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 cursor-pointer hover:-translate-y-0.5 bg-card"
@@ -81,7 +115,7 @@ export default function Dashboard() {
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{goal.title}</p>
-                          {goal.approved && (
+                          {goal.status === 'approved' && (
                             <CheckCircle2 className="w-4 h-4 text-success" />
                           )}
                         </div>
@@ -106,6 +140,12 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
+
+                {totalGoals === 0 && (
+                  <div className="p-6 text-center text-muted-foreground">
+                    <p>У вас пока нет целей</p>
+                  </div>
+                )}
               </div>
 
               <Button variant="ghost" className="w-full gap-2 hover:bg-primary-light transition-smooth group" asChild>
@@ -150,26 +190,33 @@ export default function Dashboard() {
                   <Users className="w-5 h-5 text-primary" />
                   Оценка коллег
                 </CardTitle>
-                <Badge className="bg-destructive text-destructive-foreground">
-                  2 новых
-                </Badge>
+                {pendingReviews.length > 0 && (
+                  <Badge className="bg-destructive text-destructive-foreground">
+                    {pendingReviews.length} {pendingReviews.length === 1 ? 'новый' : 'новых'}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
-                <p className="font-semibold">Петр Иванов просит оценить его работу</p>
-                <p className="text-sm text-muted-foreground">Срок: до 15 декабря</p>
-                <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
-                  <Link to="/peer-review">Перейти к оценке</Link>
-                </Button>
-              </div>
-              <div className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
-                <p className="font-semibold">Мария Смирнова запросила обратную связь</p>
-                <p className="text-sm text-muted-foreground">Срок: до 18 декабря</p>
-                <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
-                  <Link to="/peer-review">Перейти к оценке</Link>
-                </Button>
-              </div>
+              {pendingReviews.length > 0 ? (
+                pendingReviews.slice(0, 2).map((review) => (
+                  <div key={review.id} className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
+                    <p className="font-semibold">
+                      {(review as any).reviewee?.full_name} просит оценить работу
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Цель: {(review as any).goal?.title}
+                    </p>
+                    <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
+                      <Link to="/peer-review">Перейти к оценке</Link>
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="p-6 text-center text-muted-foreground">
+                  <p>Нет запросов на оценку</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
