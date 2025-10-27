@@ -1,9 +1,10 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut } from "lucide-react";
 import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { icon: Home, label: "Главная", path: "/dashboard" },
@@ -16,9 +17,9 @@ const navItems = [
 
 export const Navigation = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { signOut } = useAuth();
   
-  const handleLogout = () => navigate("/login");
+  const handleLogout = () => signOut();
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50">
