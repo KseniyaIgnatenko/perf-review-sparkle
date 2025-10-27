@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,19 @@ import { Badge } from "@/components/ui/badge";
 import { Save, Send, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-
-const goals = [
-  "Повышение качества кода",
-  "Развитие лидерских навыков",
-  "Оптимизация процессов разработки",
-  "Другая задача",
-];
+import { useGoals } from "@/hooks/useGoals";
+import { useSelfAssessments, useSelfAssessmentAnswers } from "@/hooks/useSelfAssessments";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SelfAssessment() {
+  const { goals, isLoading: goalsLoading } = useGoals();
+  const { assessments, createAssessment, updateAssessment } = useSelfAssessments();
+  
   const [selectedGoal, setSelectedGoal] = useState("");
+  const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
+  
+  const { answers, saveAnswer } = useSelfAssessmentAnswers(currentAssessmentId);
+  
   const [formData, setFormData] = useState({
     results: "",
     contribution: "",
@@ -29,6 +32,44 @@ export default function SelfAssessment() {
   });
   const [completedSections, setCompletedSections] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Загружаем данные если есть существующая оценка
+  useEffect(() => {
+    if (selectedGoal && assessments) {
+      const existingAssessment = assessments.find(a => a.goal_id === selectedGoal);
+      if (existingAssessment) {
+        setCurrentAssessmentId(existingAssessment.id);
+      } else {
+        // Создаем новую оценку
+        createAssessment({ goal_id: selectedGoal }, {
+          onSuccess: (data) => {
+            setCurrentAssessmentId(data.id);
+          }
+        });
+      }
+    }
+  }, [selectedGoal, assessments]);
+
+  // Загружаем ответы
+  useEffect(() => {
+    if (answers && answers.length > 0) {
+      const resultsAnswer = answers.find(a => a.question_text === 'results');
+      const contributionAnswer = answers.find(a => a.question_text === 'contribution');
+      const skillsAnswer = answers.find(a => a.question_text === 'skills');
+      const improvementsAnswer = answers.find(a => a.question_text === 'improvements');
+      const teamworkAnswer = answers.find(a => a.question_text === 'teamwork');
+      const satisfactionAnswer = answers.find(a => a.question_text === 'satisfaction');
+
+      setFormData({
+        results: resultsAnswer?.answer_text || "",
+        contribution: contributionAnswer?.answer_text || "",
+        skills: skillsAnswer?.answer_text || "",
+        improvements: improvementsAnswer?.answer_text || "",
+        teamworkScore: teamworkAnswer?.score || 5,
+        satisfactionScore: satisfactionAnswer?.score || 5,
+      });
+    }
+  }, [answers]);
 
   const totalSections = 6;
   const progress = (completedSections.length / totalSections) * 100;
@@ -49,6 +90,20 @@ export default function SelfAssessment() {
     calculateScore(formData.teamworkScore) + calculateScore(formData.satisfactionScore);
 
   const handleSaveDraft = () => {
+    if (!currentAssessmentId) return;
+
+    // Сохраняем все ответы
+    const answersToSave = [
+      { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
+      { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
+    ];
+
+    answersToSave.forEach(answer => saveAnswer(answer));
+
     toast({
       title: "Черновик сохранен",
       description: "Ваши ответы автоматически сохранены",
@@ -65,11 +120,47 @@ export default function SelfAssessment() {
       return;
     }
 
+    if (!currentAssessmentId) return;
+
+    // Сохраняем все ответы
+    const answersToSave = [
+      { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
+      { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
+      { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
+    ];
+
+    answersToSave.forEach(answer => saveAnswer(answer));
+
+    // Обновляем статус оценки
+    updateAssessment({
+      id: currentAssessmentId,
+      status: 'submitted',
+      total_score: totalScore,
+    });
+
     toast({
       title: "Самооценка отправлена",
       description: "Ваша самооценка успешно отправлена",
     });
   };
+
+  if (goalsLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+          <Skeleton className="h-12 w-64" />
+          <Skeleton className="h-48" />
+          <Skeleton className="h-64" />
+        </main>
+      </div>
+    );
+  }
+
+  const approvedGoals = goals.filter(g => g.status === 'approved');
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,256 +189,215 @@ export default function SelfAssessment() {
           </CardContent>
         </Card>
 
-        {/* Select Goal */}
+        {/* Goal Selection */}
         <Card className="shadow-card">
           <CardHeader>
-            <CardTitle>Выберите задачу для оценки</CardTitle>
+            <CardTitle>Выберите цель для оценки</CardTitle>
           </CardHeader>
           <CardContent>
-            <Select value={selectedGoal} onValueChange={setSelectedGoal}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите задачу из ваших целей" />
-              </SelectTrigger>
-              <SelectContent>
-                {goals.map((goal) => (
-                  <SelectItem key={goal} value={goal}>
-                    {goal}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {approvedGoals.length === 0 ? (
+              <p className="text-muted-foreground">
+                У вас нет утвержденных целей для самооценки. Сначала создайте и утвердите цели.
+              </p>
+            ) : (
+              <Select value={selectedGoal} onValueChange={setSelectedGoal}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите цель" />
+                </SelectTrigger>
+                <SelectContent>
+                  {approvedGoals.map((goal) => (
+                    <SelectItem key={goal.id} value={goal.id}>
+                      {goal.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardContent>
         </Card>
 
         {selectedGoal && (
-          <Accordion type="single" collapsible className="space-y-4">
-            {/* Question 1 */}
-            <AccordionItem value="item-1" className="border rounded-lg shadow-card bg-card">
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">1. Каких результатов удалось достичь?</span>
-                  <span className="text-destructive">*</span>
-                  {formData.results && <CheckCircle2 className="w-5 h-5 text-success ml-auto" />}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-3 pt-4">
-                  <Textarea
-                    placeholder="Выявил возможность оптимизации процесса, что привело к сокращению времени на 30%..."
-                    value={formData.results}
-                    onChange={(e) => setFormData({ ...formData, results: e.target.value })}
-                    maxLength={1000}
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {formData.results.length}/1000
-                  </p>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Подсказка:</strong> Опишите конкретные измеримые результаты, используя цифры и факты
-                    </p>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Question 2 */}
-            <AccordionItem value="item-2" className="border rounded-lg shadow-card bg-card">
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">2. Какой личный вклад в результат?</span>
-                  <span className="text-destructive">*</span>
-                  {formData.contribution && <CheckCircle2 className="w-5 h-5 text-success ml-auto" />}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-3 pt-4">
-                  <Textarea
-                    placeholder="Опишите ваш личный вклад..."
-                    value={formData.contribution}
-                    onChange={(e) => setFormData({ ...formData, contribution: e.target.value })}
-                    maxLength={500}
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {formData.contribution.length}/500
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Question 3 */}
-            <AccordionItem value="item-3" className="border rounded-lg shadow-card bg-card">
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">3. Что забрал с собой (навыки)?</span>
-                  {formData.skills && <CheckCircle2 className="w-5 h-5 text-success ml-auto" />}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-3 pt-4">
-                  <Textarea
-                    placeholder="Например: прокачался в микросервисах, научился эффективно работать с командой..."
-                    value={formData.skills}
-                    onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                    maxLength={500}
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {formData.skills.length}/500
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Question 4 */}
-            <AccordionItem value="item-4" className="border rounded-lg shadow-card bg-card">
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">4. Что сделаю по-другому?</span>
-                  {formData.improvements && <CheckCircle2 className="w-5 h-5 text-success ml-auto" />}
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-3 pt-4">
-                  <Textarea
-                    placeholder="Рефлексия: что бы вы изменили в своем подходе..."
-                    value={formData.improvements}
-                    onChange={(e) => setFormData({ ...formData, improvements: e.target.value })}
-                    maxLength={500}
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {formData.improvements.length}/500
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Question 5 */}
-            <AccordionItem value="item-5" className="border rounded-lg shadow-card bg-card">
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">5. Оценка взаимодействия с коллегами (0-10)</span>
-                  <span className="text-destructive">*</span>
-                  <CheckCircle2 className="w-5 h-5 text-success ml-auto" />
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-4 pt-4">
-                  <Slider
-                    value={[formData.teamworkScore]}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, teamworkScore: value[0] })
-                    }
-                    max={10}
-                    step={1}
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-primary">
-                      {formData.teamworkScore}
-                    </span>
-                    <Badge variant="outline">
-                      {getScoreLabel(formData.teamworkScore)}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>0-3: Низкое</span>
-                    <span>4-7: Среднее</span>
-                    <span>8-10: Высокое</span>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
-            {/* Question 6 */}
-            <AccordionItem value="item-6" className="border rounded-lg shadow-card bg-card">
-              <AccordionTrigger className="px-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">6. Удовлетворенность выполнением (0-10)</span>
-                  <span className="text-destructive">*</span>
-                  <CheckCircle2 className="w-5 h-5 text-success ml-auto" />
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-4 pt-4">
-                  <Slider
-                    value={[formData.satisfactionScore]}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, satisfactionScore: value[0] })
-                    }
-                    max={10}
-                    step={1}
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-primary">
-                      {formData.satisfactionScore}
-                    </span>
-                    <Badge variant="outline">
-                      {getScoreLabel(formData.satisfactionScore)}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>0-3: Низкое</span>
-                    <span>4-7: Среднее</span>
-                    <span>8-10: Высокое</span>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
-
-        {selectedGoal && (
           <>
-            {/* Score Summary */}
-            <Card className="shadow-card bg-primary/5 border-primary/20">
+            {/* Questions */}
+            <Card className="shadow-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
-                  Итоговый балл
-                </CardTitle>
+                <CardTitle>Вопросы для самооценки</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Рассчитывается автоматически на основе ваших ответов
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      0-7 = 1 балл • 8-12 = 2 балла • 13-20 = 3 балла
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-4xl font-bold text-primary">{totalScore}</div>
-                    <p className="text-sm text-muted-foreground">баллов</p>
-                  </div>
-                </div>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="results">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        {formData.results && <CheckCircle2 className="w-4 h-4 text-success" />}
+                        <span>1. Достижение результатов *</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Опишите, какие результаты были достигнуты по этой цели
+                      </p>
+                      <Textarea
+                        placeholder="Опишите ваши достижения..."
+                        value={formData.results}
+                        onChange={(e) => setFormData({ ...formData, results: e.target.value })}
+                        rows={4}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="contribution">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        {formData.contribution && <CheckCircle2 className="w-4 h-4 text-success" />}
+                        <span>2. Вклад в команду *</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Как ваша работа повлияла на команду и проект
+                      </p>
+                      <Textarea
+                        placeholder="Опишите ваш вклад..."
+                        value={formData.contribution}
+                        onChange={(e) => setFormData({ ...formData, contribution: e.target.value })}
+                        rows={4}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="skills">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        {formData.skills && <CheckCircle2 className="w-4 h-4 text-success" />}
+                        <span>3. Развитие навыков</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Какие навыки вы развили в течение периода
+                      </p>
+                      <Textarea
+                        placeholder="Опишите развитые навыки..."
+                        value={formData.skills}
+                        onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                        rows={4}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="improvements">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        {formData.improvements && <CheckCircle2 className="w-4 h-4 text-success" />}
+                        <span>4. Области для улучшения</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Что можно улучшить в вашей работе
+                      </p>
+                      <Textarea
+                        placeholder="Опишите области для улучшения..."
+                        value={formData.improvements}
+                        onChange={(e) => setFormData({ ...formData, improvements: e.target.value })}
+                        rows={4}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="teamwork">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-success" />
+                        <span>5. Командная работа</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">
+                          Оцените вашу командную работу
+                        </span>
+                        <span className="text-2xl font-bold text-primary">
+                          {formData.teamworkScore}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[formData.teamworkScore]}
+                        onValueChange={([value]) =>
+                          setFormData({ ...formData, teamworkScore: value })
+                        }
+                        min={1}
+                        max={10}
+                        step={1}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>1 - Требует улучшения</span>
+                        <span>10 - Отлично</span>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="satisfaction">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-success" />
+                        <span>6. Удовлетворенность работой</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">
+                          Насколько вы удовлетворены своей работой
+                        </span>
+                        <span className="text-2xl font-bold text-primary">
+                          {formData.satisfactionScore}
+                        </span>
+                      </div>
+                      <Slider
+                        value={[formData.satisfactionScore]}
+                        onValueChange={([value]) =>
+                          setFormData({ ...formData, satisfactionScore: value })
+                        }
+                        min={1}
+                        max={10}
+                        step={1}
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>1 - Не удовлетворен</span>
+                        <span>10 - Очень удовлетворен</span>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </CardContent>
             </Card>
 
-            {/* Actions */}
-            <div className="flex gap-4">
-              <Button
-                variant="outline"
-                onClick={handleSaveDraft}
-                className="flex-1 gap-2"
-              >
-                <Save className="w-4 h-4" />
-                Сохранить черновик
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                className="flex-1 gap-2 gradient-primary"
-              >
-                <Send className="w-4 h-4" />
-                Отправить
-              </Button>
-            </div>
+            {/* Summary */}
+            <Card className="shadow-card border-primary">
+              <CardHeader>
+                <CardTitle>Итоговая оценка</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <span className="font-medium">Общий балл:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-bold text-primary">{totalScore}</span>
+                    <Badge variant="outline">{getScoreLabel(totalScore)}</Badge>
+                  </div>
+                </div>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Автосохранение происходит каждые 30 секунд
-            </p>
+                <div className="flex gap-3 justify-end">
+                  <Button variant="outline" className="gap-2" onClick={handleSaveDraft}>
+                    <Save className="w-4 h-4" />
+                    Сохранить черновик
+                  </Button>
+                  <Button className="gap-2" onClick={handleSubmit}>
+                    <Send className="w-4 h-4" />
+                    Отправить самооценку
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </>
         )}
       </main>

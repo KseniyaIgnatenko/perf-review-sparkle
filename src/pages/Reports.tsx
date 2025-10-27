@@ -1,129 +1,108 @@
-import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileOutput, Download, Eye, Calendar } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-
-interface Report {
-  id: string;
-  title: string;
-  type: "personal" | "team" | "company";
-  period: string;
-  date: string;
-  status: "ready" | "processing";
-}
+import { FileText, Download, Eye, TrendingUp, Target, Users } from "lucide-react";
+import { useReports } from "@/hooks/useReports";
+import { useGoals } from "@/hooks/useGoals";
+import { usePeerReviews } from "@/hooks/usePeerReviews";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Reports() {
-  const [reports] = useState<Report[]>([
-    {
-      id: "1",
-      title: "Личный отчет по целям Q4 2024",
-      type: "personal",
-      period: "Q4 2024",
-      date: "2024-12-01",
-      status: "ready",
-    },
-    {
-      id: "2",
-      title: "Итоги 360° оценки",
-      type: "personal",
-      period: "Q4 2024",
-      date: "2024-12-15",
-      status: "ready",
-    },
-    {
-      id: "3",
-      title: "Отчет по команде - Разработка",
-      type: "team",
-      period: "Q4 2024",
-      date: "2024-12-20",
-      status: "ready",
-    },
-    {
-      id: "4",
-      title: "Сводный отчет по компании",
-      type: "company",
-      period: "Q4 2024",
-      date: "2024-12-25",
-      status: "processing",
-    },
-  ]);
+  const { reports, isLoading: reportsLoading } = useReports();
+  const { goals, isLoading: goalsLoading } = useGoals();
+  const { reviewsReceived, isLoading: reviewsLoading } = usePeerReviews();
 
-  const [personalStats] = useState({
-    overallScore: 8.5,
-    goalsCompleted: 4,
-    totalGoals: 5,
-    selfAssessment: 8.5,
-    peerAverage: 8.2,
-    managerScore: 8.7,
-  });
+  const isLoading = reportsLoading || goalsLoading || reviewsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <Skeleton className="h-12 w-64 mb-8" />
+          <div className="space-y-6">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const totalGoals = goals.length;
+  const completedGoals = goals.filter(g => g.status === 'completed').length;
+  const averageProgress = totalGoals > 0
+    ? Math.round(goals.reduce((sum, g) => sum + g.progress, 0) / totalGoals)
+    : 0;
+  const submittedReviews = reviewsReceived.filter(r => r.status === 'submitted').length;
 
   const getTypeBadge = (type: string) => {
     const typeMap = {
       personal: { label: "Личный", variant: "default" as const },
-      team: { label: "Команда", variant: "secondary" as const },
+      team: { label: "Командный", variant: "secondary" as const },
       company: { label: "Компания", variant: "outline" as const },
     };
-    return typeMap[type as keyof typeof typeMap];
+    return typeMap[type as keyof typeof typeMap] || { label: type, variant: "default" as const };
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="mb-2 flex items-center gap-2">
-            <FileOutput className="w-8 h-8 text-primary" />
-            Отчеты
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        <div>
+          <h1 className="flex items-center gap-2 mb-2">
+            <FileText className="w-8 h-8 text-primary" />
+            Отчеты и результаты
           </h1>
           <p className="text-muted-foreground text-lg">
-            Просмотр и загрузка отчетов по оценке результативности
+            Ваши результаты оценки и персональная статистика
           </p>
         </div>
 
         {/* Personal Summary */}
-        <Card className="shadow-card mb-8">
+        <Card className="shadow-card border-primary/20">
           <CardHeader>
-            <CardTitle>Ваши результаты</CardTitle>
-            <CardDescription>Сводка по итогам оценки за текущий период</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Моя персональная сводка
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Общий балл:</span>
-                  <span className="text-3xl font-bold text-primary">
-                    {personalStats.overallScore}
-                  </span>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Target className="w-4 h-4" />
+                  <span className="text-sm">Прогресс по целям</span>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Выполнено целей:</span>
-                    <span className="font-semibold">
-                      {personalStats.goalsCompleted} из {personalStats.totalGoals}
-                    </span>
-                  </div>
-                  <Progress
-                    value={(personalStats.goalsCompleted / personalStats.totalGoals) * 100}
-                    className="h-2"
-                  />
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-primary">{averageProgress}%</span>
+                  <span className="text-sm text-muted-foreground">
+                    {completedGoals}/{totalGoals} завершено
+                  </span>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Самооценка:</span>
-                  <span className="font-bold">{personalStats.selfAssessment}</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">Оценка коллег</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Оценка коллег:</span>
-                  <span className="font-bold">{personalStats.peerAverage}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-primary">{submittedReviews}</span>
+                  <span className="text-sm text-muted-foreground">отзывов</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Оценка менеджера:</span>
-                  <span className="font-bold">{personalStats.managerScore}</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm">Отчеты</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-primary">{reports.length}</span>
+                  <span className="text-sm text-muted-foreground">доступно</span>
                 </div>
               </div>
             </div>
@@ -132,87 +111,88 @@ export default function Reports() {
 
         {/* Reports List */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Доступные отчеты</h2>
-          {reports.map((report) => (
-            <Card key={report.id} className="shadow-card">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{report.title}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      {report.period} • Создан {new Date(report.date).toLocaleDateString("ru-RU")}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge variant={getTypeBadge(report.type).variant}>
-                      {getTypeBadge(report.type).label}
-                    </Badge>
-                    {report.status === "processing" ? (
-                      <Badge variant="secondary">Формируется</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-success-light text-success-foreground border-success">
-                        Готов
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 justify-end">
-                  {report.status === "ready" ? (
-                    <>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Eye className="w-4 h-4" />
-                        Просмотр
-                      </Button>
-                      <Button size="sm" className="gap-2">
-                        <Download className="w-4 h-4" />
-                        Скачать PDF
-                      </Button>
-                    </>
-                  ) : (
-                    <Button size="sm" disabled>
-                      Формируется...
-                    </Button>
-                  )}
-                </div>
+          <h2 className="text-2xl font-bold">Доступные отчеты</h2>
+          
+          {reports.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg font-semibold mb-2">Отчеты пока недоступны</p>
+                <p className="text-muted-foreground">
+                  Отчеты будут созданы после завершения цикла оценки
+                </p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            <div className="grid gap-4">
+              {reports.map((report) => {
+                const typeBadge = getTypeBadge(report.type);
+                return (
+                  <Card key={report.id} className="shadow-card">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="flex items-center gap-2">
+                            Отчет: {typeBadge.label}
+                            <Badge variant={typeBadge.variant}>
+                              {typeBadge.label}
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription>
+                            {report.period && `Период: ${report.period}`}
+                            {report.period && ' • '}
+                            Создан: {new Date(report.created_at).toLocaleDateString()}
+                          </CardDescription>
+                        </div>
+                        <Badge variant={report.status === 'ready' ? 'default' : 'secondary'}>
+                          {report.status === 'ready' ? 'Готов' : 'В процессе'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2">
+                        {report.status === 'ready' && (
+                          <>
+                            <Button size="sm" variant="outline" className="gap-2">
+                              <Eye className="w-4 h-4" />
+                              Просмотр
+                            </Button>
+                            <Button size="sm" className="gap-2">
+                              <Download className="w-4 h-4" />
+                              Скачать
+                            </Button>
+                          </>
+                        )}
+                        {report.status === 'in_progress' && (
+                          <span className="text-sm text-muted-foreground">
+                            Отчет формируется, пожалуйста, подождите
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Development Recommendations */}
-        <Card className="shadow-card mt-8">
+        <Card className="shadow-card">
           <CardHeader>
             <CardTitle>Рекомендации по развитию</CardTitle>
             <CardDescription>
-              На основе результатов оценки мы подготовили для вас следующие рекомендации
+              Основано на результатах вашей оценки
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
-              <li className="flex gap-3">
-                <span className="text-primary font-bold">1.</span>
-                <span>
-                  Рассмотрите участие в курсе по лидерству для развития навыков управления
-                  командой
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary font-bold">2.</span>
-                <span>
-                  Продолжайте работу над улучшением коммуникации в кроссфункциональных проектах
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary font-bold">3.</span>
-                <span>
-                  Отличные результаты в техническом развитии - можете стать ментором для младших
-                  коллег
-                </span>
-              </li>
-            </ul>
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted">
+                <p className="text-sm leading-relaxed">
+                  Рекомендации будут доступны после завершения всех этапов оценки
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </main>

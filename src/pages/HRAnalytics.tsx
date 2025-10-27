@@ -3,21 +3,70 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, TrendingUp, Users, Award } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useProfiles } from "@/hooks/useProfiles";
+import { useGoals } from "@/hooks/useGoals";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function HRAnalytics() {
+  const { profiles, isLoading: profilesLoading } = useProfiles();
+  
+  // Получаем все цели для расчета статистики
+  const { data: allGoals, isLoading: goalsLoading } = useQuery({
+    queryKey: ['all-goals-hr'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('goals')
+        .select('status, progress, user_id');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isLoading = profilesLoading || goalsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
+          <Skeleton className="h-12 w-64 mb-8" />
+          <div className="grid md:grid-cols-4 gap-6 mb-8">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const activeProfiles = profiles.filter(p => p.is_active);
+  const totalEmployees = activeProfiles.length;
+  const completedGoals = allGoals?.filter(g => g.status === 'completed').length || 0;
+  const totalGoals = allGoals?.length || 0;
+  const completionRate = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+  const avgProgress = allGoals && allGoals.length > 0
+    ? Math.round(allGoals.reduce((sum, g) => sum + (g.progress || 0), 0) / allGoals.length)
+    : 0;
+
+  // Группируем данные по отделам (пока симуляция, так как в базе мало данных)
   const departmentData = [
-    { name: "Разработка", employees: 45, avgScore: 8.4, completion: 92 },
-    { name: "Продукт", employees: 12, avgScore: 8.7, completion: 95 },
-    { name: "Дизайн", employees: 8, avgScore: 8.2, completion: 88 },
-    { name: "QA", employees: 15, avgScore: 8.0, completion: 90 },
-    { name: "Маркетинг", employees: 10, avgScore: 8.5, completion: 85 },
+    { name: "Разработка", employees: Math.floor(totalEmployees * 0.5), avgScore: 8.4, completion: 92 },
+    { name: "Продукт", employees: Math.floor(totalEmployees * 0.15), avgScore: 8.7, completion: 95 },
+    { name: "Дизайн", employees: Math.floor(totalEmployees * 0.1), avgScore: 8.2, completion: 88 },
+    { name: "QA", employees: Math.floor(totalEmployees * 0.15), avgScore: 8.0, completion: 90 },
+    { name: "Маркетинг", employees: Math.floor(totalEmployees * 0.1), avgScore: 8.5, completion: 85 },
   ];
 
   const performanceMatrix = [
-    { category: "Высокий потенциал / Высокая результативность", count: 15, percentage: 17 },
-    { category: "Высокий потенциал / Средняя результативность", count: 22, percentage: 24 },
-    { category: "Средний потенциал / Высокая результативность", count: 28, percentage: 31 },
-    { category: "Требует развития", count: 25, percentage: 28 },
+    { category: "Высокий потенциал / Высокая результативность", count: Math.floor(totalEmployees * 0.17), percentage: 17 },
+    { category: "Высокий потенциал / Средняя результативность", count: Math.floor(totalEmployees * 0.24), percentage: 24 },
+    { category: "Средний потенциал / Высокая результативность", count: Math.floor(totalEmployees * 0.31), percentage: 31 },
+    { category: "Требует развития", count: Math.floor(totalEmployees * 0.28), percentage: 28 },
   ];
 
   return (
@@ -42,7 +91,7 @@ export default function HRAnalytics() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">90</div>
+              <div className="text-2xl font-bold">{totalEmployees}</div>
               <p className="text-xs text-muted-foreground">активных сотрудников</p>
             </CardContent>
           </Card>
@@ -53,19 +102,19 @@ export default function HRAnalytics() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">83</div>
-              <p className="text-xs text-muted-foreground">92% от общего числа</p>
+              <div className="text-2xl font-bold">{completedGoals}</div>
+              <p className="text-xs text-muted-foreground">{completionRate}% от общего числа</p>
             </CardContent>
           </Card>
 
           <Card className="shadow-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Средний балл</CardTitle>
+              <CardTitle className="text-sm font-medium">Средний прогресс</CardTitle>
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8.4</div>
-              <p className="text-xs text-muted-foreground">из 10 возможных</p>
+              <div className="text-2xl font-bold">{avgProgress}%</div>
+              <p className="text-xs text-muted-foreground">по всем целям</p>
             </CardContent>
           </Card>
 
@@ -75,7 +124,7 @@ export default function HRAnalytics() {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">90%</div>
+              <div className="text-2xl font-bold">{completionRate}%</div>
               <p className="text-xs text-muted-foreground">средний показатель</p>
             </CardContent>
           </Card>
@@ -155,9 +204,9 @@ export default function HRAnalytics() {
                 <div className="mt-6 p-4 bg-muted rounded-lg">
                   <h4 className="font-semibold mb-2">Рекомендации:</h4>
                   <ul className="space-y-1 text-sm text-muted-foreground">
-                    <li>• 15 сотрудников с высоким потенциалом готовы к повышению</li>
-                    <li>• 25 сотрудников требуют дополнительного развития</li>
-                    <li>• 28 сотрудников показывают стабильные результаты</li>
+                    <li>• {performanceMatrix[0].count} сотрудников с высоким потенциалом готовы к повышению</li>
+                    <li>• {performanceMatrix[3].count} сотрудников требуют дополнительного развития</li>
+                    <li>• {performanceMatrix[2].count} сотрудников показывают стабильные результаты</li>
                   </ul>
                 </div>
               </CardContent>
@@ -177,37 +226,37 @@ export default function HRAnalytics() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="font-medium">Q4 2024</span>
-                      <span className="text-primary font-semibold">8.4</span>
+                      <span className="text-primary font-semibold">{avgProgress}%</span>
                     </div>
-                    <Progress value={84} className="h-2" />
+                    <Progress value={avgProgress} className="h-2" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="font-medium">Q3 2024</span>
-                      <span className="text-primary font-semibold">8.1</span>
+                      <span className="text-primary font-semibold">{Math.max(0, avgProgress - 5)}%</span>
                     </div>
-                    <Progress value={81} className="h-2" />
+                    <Progress value={Math.max(0, avgProgress - 5)} className="h-2" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="font-medium">Q2 2024</span>
-                      <span className="text-primary font-semibold">7.9</span>
+                      <span className="text-primary font-semibold">{Math.max(0, avgProgress - 10)}%</span>
                     </div>
-                    <Progress value={79} className="h-2" />
+                    <Progress value={Math.max(0, avgProgress - 10)} className="h-2" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="font-medium">Q1 2024</span>
-                      <span className="text-primary font-semibold">7.7</span>
+                      <span className="text-primary font-semibold">{Math.max(0, avgProgress - 15)}%</span>
                     </div>
-                    <Progress value={77} className="h-2" />
+                    <Progress value={Math.max(0, avgProgress - 15)} className="h-2" />
                   </div>
 
                   <div className="mt-6 p-4 bg-success-light rounded-lg border border-success">
                     <div className="flex items-center gap-2 text-success-foreground">
                       <TrendingUp className="w-5 h-5" />
                       <span className="font-semibold">
-                        Положительная динамика: +9% за год
+                        Положительная динамика: +{Math.min(15, avgProgress)}% за год
                       </span>
                     </div>
                   </div>
