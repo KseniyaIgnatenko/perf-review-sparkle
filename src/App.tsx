@@ -14,6 +14,7 @@ import PeerReview from "./pages/PeerReview";
 import Manager from "./pages/Manager";
 import HRAnalytics from "./pages/HRAnalytics";
 import Reports from "./pages/Reports";
+import TestSetup from "./pages/TestSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/manager" element={<ProtectedRoute><Manager /></ProtectedRoute>} />
             <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/test-setup" element={<TestSetup />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
