@@ -50,18 +50,21 @@ export function useManagerGoals() {
       // Get all goals from team members
       const { data: goalsData, error } = await supabase
         .from('goals')
-        .select(`
-          *,
-          profiles!goals_user_id_fkey (
-            full_name
-          )
-        `)
+        .select('*')
         .in('user_id', teamMemberIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return goalsData.map((goal: any) => ({
+      // Get profiles for team members
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', teamMemberIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p.full_name]) || []);
+
+      return goalsData?.map((goal: any) => ({
         id: goal.id,
         title: goal.title,
         description: goal.description,
@@ -70,9 +73,9 @@ export function useManagerGoals() {
         period: goal.period,
         progress: goal.progress,
         user_id: goal.user_id,
-        employee_name: goal.profiles?.full_name || 'Unknown',
+        employee_name: profilesMap.get(goal.user_id) || 'Unknown',
         created_at: goal.created_at,
-      })) as TeamMemberGoal[];
+      })) as TeamMemberGoal[] || [];
     },
     enabled: !!user,
   });
