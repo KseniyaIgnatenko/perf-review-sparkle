@@ -39,13 +39,12 @@ export const Navigation = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`
-                      relative px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 group
-                      ${isActive 
-                        ? "bg-gradient-primary text-primary-foreground shadow-md" 
+                    className={cn(
+                      "relative px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 group",
+                      isActive 
+                        ? "bg-gradient-primary text-white shadow-md" 
                         : "text-muted-foreground hover:text-foreground hover:bg-primary-light/50 hover:scale-105"
-                      }
-                    `}
+                    )}
                   >
                     <Icon className={cn(
                       "w-4 h-4 transition-transform",
@@ -61,7 +60,7 @@ export const Navigation = () => {
                       </Badge>
                     )}
                     {isActive && (
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-primary-foreground rounded-full" />
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-white/50 rounded-full" />
                     )}
                   </Link>
                 );
