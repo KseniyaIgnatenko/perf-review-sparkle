@@ -1,23 +1,33 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut } from "lucide-react";
+import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck } from "lucide-react";
 import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-
-const navItems = [
-  { icon: Home, label: "Главная", path: "/dashboard" },
-  { icon: Target, label: "Мои цели", path: "/goals" },
-  { icon: ClipboardList, label: "Самооценка", path: "/self-assessment" },
-  { icon: Users, label: "Оценка коллег", path: "/peer-review", badge: 2, badgeTooltip: "Ожидают вашей оценки" },
-  { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics" },
-  { icon: FileText, label: "Отчеты", path: "/reports" },
-];
+import { useProfile } from "@/hooks/useProfiles";
 
 export const Navigation = () => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { profile } = useProfile();
+
+  const isManager = profile?.role === 'manager';
+  const isHR = profile?.role === 'hr' || profile?.role === 'admin';
+
+  const navItems = [
+    { icon: Home, label: "Главная", path: "/dashboard", roles: ['employee', 'manager', 'hr', 'admin'] },
+    { icon: Target, label: "Мои цели", path: "/goals", roles: ['employee', 'manager', 'hr', 'admin'] },
+    { icon: ClipboardList, label: "Самооценка", path: "/self-assessment", roles: ['employee', 'manager', 'hr', 'admin'] },
+    { icon: Users, label: "Оценка коллег", path: "/peer-review", badge: 2, badgeTooltip: "Ожидают вашей оценки", roles: ['employee', 'manager', 'hr', 'admin'] },
+    { icon: ClipboardCheck, label: "Панель менеджера", path: "/manager", roles: ['manager'] },
+    { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'] },
+    { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'] },
+  ];
+
+  const visibleNavItems = navItems.filter(item => 
+    !item.roles || item.roles.includes(profile?.role || 'employee')
+  );
   
   const handleLogout = () => signOut();
 
@@ -32,7 +42,7 @@ export const Navigation = () => {
             </Link>
 
             <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 
