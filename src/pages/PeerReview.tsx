@@ -10,11 +10,13 @@ import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Users, CheckCircle2, Clock, Plus, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { usePeerReviews } from "@/hooks/usePeerReviews";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PeerReview() {
+  const { user } = useAuth();
   const { reviewsToWrite, reviewsReceived, isLoading, requestReview, isRequesting, submitReview, isSubmitting } = usePeerReviews();
   const { profiles } = useProfiles();
   const { toast } = useToast();
@@ -84,7 +86,7 @@ export default function PeerReview() {
   // Фильтруем коллег - исключаем уже отправленные запросы и самого пользователя
   const requestedReviewerIds = reviewsReceived.map(r => r.reviewer_id);
   const availableColleagues = profiles.filter(
-    p => !requestedReviewerIds.includes(p.id)
+    p => !requestedReviewerIds.includes(p.id) && p.id !== user?.id
   );
 
   return (
