@@ -24,7 +24,12 @@ export function useManagerGoals() {
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['manager-goals', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) {
+        console.log('[useManagerGoals] No user');
+        return [];
+      }
+
+      console.log('[useManagerGoals] Fetching for user:', user.id);
 
       // Get manager's profile to find their department
       const { data: managerProfile } = await supabase
@@ -33,7 +38,12 @@ export function useManagerGoals() {
         .eq('id', user.id)
         .single();
 
-      if (!managerProfile?.department_id) return [];
+      console.log('[useManagerGoals] Manager profile:', managerProfile);
+
+      if (!managerProfile?.department_id) {
+        console.log('[useManagerGoals] No department_id');
+        return [];
+      }
 
       // Get all employees in the same department
       const { data: teamMembers } = await supabase
@@ -43,9 +53,15 @@ export function useManagerGoals() {
         .eq('is_active', true)
         .neq('id', user.id);
 
-      if (!teamMembers || teamMembers.length === 0) return [];
+      console.log('[useManagerGoals] Team members:', teamMembers);
+
+      if (!teamMembers || teamMembers.length === 0) {
+        console.log('[useManagerGoals] No team members found');
+        return [];
+      }
 
       const teamMemberIds = teamMembers.map((m) => m.id);
+      console.log('[useManagerGoals] Team member IDs:', teamMemberIds);
 
       // Get all goals from team members
       const { data: goalsData, error } = await supabase
@@ -59,7 +75,12 @@ export function useManagerGoals() {
         .in('user_id', teamMemberIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('[useManagerGoals] Goals data:', goalsData);
+
+      if (error) {
+        console.error('[useManagerGoals] Error:', error);
+        throw error;
+      }
 
       return goalsData.map((goal: any) => ({
         id: goal.id,
