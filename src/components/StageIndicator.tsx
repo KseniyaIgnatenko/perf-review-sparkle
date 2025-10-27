@@ -16,9 +16,9 @@ export const StageIndicator = ({ stages, className }: StageIndicatorProps) => {
     <div className={cn("w-full", className)}>
       <div className="flex items-center justify-between relative">
         {/* Progress Line */}
-        <div className="absolute top-5 left-0 right-0 h-1 bg-muted">
+        <div className="absolute top-5 left-0 right-0 h-1.5 bg-muted rounded-full shadow-inner">
           <div
-            className="h-full bg-primary transition-smooth"
+            className="h-full bg-gradient-primary transition-all duration-700 ease-out rounded-full shadow-sm animate-progress-fill"
             style={{
               width: `${(stages.filter(s => s.status === "completed").length / stages.length) * 100}%`,
             }}
@@ -32,13 +32,13 @@ export const StageIndicator = ({ stages, className }: StageIndicatorProps) => {
           const isNotStarted = stage.status === "not-started";
 
           return (
-            <div key={index} className="flex flex-col items-center gap-2 relative z-10">
+            <div key={index} className="flex flex-col items-center gap-3 relative z-10">
               <div
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-smooth border-4 border-background",
-                  isCompleted && "bg-success text-success-foreground",
-                  isInProgress && "bg-primary text-primary-foreground",
-                  isNotStarted && "bg-muted text-muted-foreground"
+                  "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-4 border-background shadow-md",
+                  isCompleted && "bg-success text-success-foreground scale-110",
+                  isInProgress && "bg-gradient-primary text-primary-foreground animate-pulse",
+                  isNotStarted && "bg-muted text-muted-foreground hover:scale-105"
                 )}
               >
                 {isCompleted ? (
@@ -49,7 +49,7 @@ export const StageIndicator = ({ stages, className }: StageIndicatorProps) => {
               </div>
               <span
                 className={cn(
-                  "text-xs font-medium text-center max-w-[80px]",
+                  "text-sm font-semibold text-center max-w-[90px] transition-colors",
                   isCompleted && "text-success",
                   isInProgress && "text-primary",
                   isNotStarted && "text-muted-foreground"

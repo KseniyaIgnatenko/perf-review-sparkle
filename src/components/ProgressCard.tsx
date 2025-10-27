@@ -41,27 +41,27 @@ export const ProgressCard = ({
   const config = statusConfig[status];
 
   return (
-    <Card className={cn("shadow-card transition-smooth hover:shadow-lg", className)}>
-      <CardHeader>
+    <Card className={cn("shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1", className)}>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-lg", config.bgColor, config.color)}>
+            <div className={cn("p-3 rounded-xl transition-transform hover:scale-110", config.bgColor, config.color)}>
               {icon}
             </div>
-            <CardTitle className="text-lg">{title}</CardTitle>
+            <CardTitle className="text-xl font-semibold">{title}</CardTitle>
           </div>
-          <span className={cn("text-sm font-medium", config.color)}>
+          <span className={cn("text-sm font-semibold px-3 py-1.5 rounded-full", config.color, config.bgColor)}>
             {config.label}
           </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
+      <CardContent className="space-y-5 pt-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Прогресс</span>
-            <span className="font-semibold">{progress}%</span>
+            <span className="text-muted-foreground font-medium">Прогресс</span>
+            <span className="font-bold text-base">{progress}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-2.5" />
         </div>
         {children}
       </CardContent>
