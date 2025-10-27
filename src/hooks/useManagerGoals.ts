@@ -88,6 +88,7 @@ export function useManagerGoals() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manager-goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
       toast({
         title: 'Успешно',
         description: 'Цель утверждена',
@@ -114,6 +115,7 @@ export function useManagerGoals() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manager-goals'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
       toast({
         title: 'Успешно',
         description: 'Цель отправлена на доработку',
