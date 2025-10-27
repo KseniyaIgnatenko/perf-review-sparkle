@@ -6,12 +6,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Send, CheckCircle2 } from "lucide-react";
+import { Save, Send, CheckCircle2, FileText, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useGoals } from "@/hooks/useGoals";
 import { useSelfAssessments, useSelfAssessmentAnswers } from "@/hooks/useSelfAssessments";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StageIndicator } from "@/components/StageIndicator";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 export default function SelfAssessment() {
   const { goals, isLoading: goalsLoading } = useGoals();
@@ -30,7 +33,7 @@ export default function SelfAssessment() {
     teamworkScore: 5,
     satisfactionScore: 5,
   });
-  const [completedSections, setCompletedSections] = useState<string[]>([]);
+  const [openAccordion, setOpenAccordion] = useState<string>("");
   const { toast } = useToast();
 
   // Загружаем данные если есть существующая оценка
@@ -71,8 +74,33 @@ export default function SelfAssessment() {
     }
   }, [answers]);
 
-  const totalSections = 6;
-  const progress = (completedSections.length / totalSections) * 100;
+  // Определяем этапы заполнения
+  const stages = [
+    {
+      label: "Результаты",
+      status: formData.results ? "completed" as const : openAccordion === "results" ? "in-progress" as const : "not-started" as const,
+    },
+    {
+      label: "Вклад",
+      status: formData.contribution ? "completed" as const : openAccordion === "contribution" ? "in-progress" as const : "not-started" as const,
+    },
+    {
+      label: "Навыки",
+      status: formData.skills ? "completed" as const : openAccordion === "skills" ? "in-progress" as const : "not-started" as const,
+    },
+    {
+      label: "Улучшения",
+      status: formData.improvements ? "completed" as const : openAccordion === "improvements" ? "in-progress" as const : "not-started" as const,
+    },
+    {
+      label: "Командная работа",
+      status: "completed" as const,
+    },
+    {
+      label: "Удовлетворенность",
+      status: "completed" as const,
+    },
+  ];
 
   const calculateScore = (value: number) => {
     if (value >= 0 && value <= 7) return 1;
@@ -160,7 +188,16 @@ export default function SelfAssessment() {
     );
   }
 
-  const approvedGoals = goals.filter(g => g.status === 'approved');
+  const approvedGoals = goals.filter(g => g.status === 'approved' || g.status === 'on_review');
+  
+  // Получаем информацию о существующих самооценках
+  const goalsWithAssessments = approvedGoals.map(goal => {
+    const assessment = assessments?.find(a => a.goal_id === goal.id);
+    return {
+      ...goal,
+      assessment,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -173,21 +210,67 @@ export default function SelfAssessment() {
           </p>
         </div>
 
-        {/* Progress */}
-        <Card className="shadow-card">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Прогресс заполнения</span>
-              <Badge variant="outline">{completedSections.length}/{totalSections} разделов</Badge>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Список целей с самооценками */}
+        {goalsWithAssessments.length > 0 && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Мои самооценки
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {goalsWithAssessments.map((goal) => (
+                  <div
+                    key={goal.id}
+                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer hover:border-primary ${
+                      selectedGoal === goal.id ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                    onClick={() => setSelectedGoal(goal.id)}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-semibold">{goal.title}</h3>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          {goal.period && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              {goal.period}
+                            </span>
+                          )}
+                          {goal.due_date && (
+                            <span>
+                              до {format(new Date(goal.due_date), "d MMMM yyyy", { locale: ru })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {goal.assessment ? (
+                          <>
+                            <Badge 
+                              variant={goal.assessment.status === 'submitted' ? 'default' : 'secondary'}
+                            >
+                              {goal.assessment.status === 'submitted' ? 'Отправлено' : 'Черновик'}
+                            </Badge>
+                            {goal.assessment.total_score && (
+                              <span className="text-sm font-semibold text-primary">
+                                Балл: {goal.assessment.total_score}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <Badge variant="outline">Не заполнено</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Goal Selection */}
         <Card className="shadow-card">
@@ -218,13 +301,26 @@ export default function SelfAssessment() {
 
         {selectedGoal && (
           <>
+            {/* Индикатор прогресса по шагам */}
+            <Card className="shadow-card">
+              <CardContent className="pt-6">
+                <StageIndicator stages={stages} />
+              </CardContent>
+            </Card>
+
             {/* Questions */}
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle>Вопросы для самооценки</CardTitle>
               </CardHeader>
               <CardContent>
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion 
+                  type="single" 
+                  collapsible 
+                  className="w-full"
+                  value={openAccordion}
+                  onValueChange={setOpenAccordion}
+                >
                   <AccordionItem value="results">
                     <AccordionTrigger className="hover:no-underline">
                       <div className="flex items-center gap-2">
