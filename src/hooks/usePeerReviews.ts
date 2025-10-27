@@ -7,19 +7,31 @@ export interface PeerReview {
   id: string;
   reviewer_id: string;
   reviewee_id: string;
-  goal_id: string;
+  goal_id: string | null;
   score: number | null;
   comment: string | null;
+  collaboration_score: number | null;
+  quality_score: number | null;
+  communication_score: number | null;
   status: 'pending' | 'submitted';
   created_at: string;
   updated_at: string;
+  reviewer?: {
+    full_name: string;
+  };
+  reviewee?: {
+    full_name: string;
+  };
+  goal?: {
+    title: string;
+  };
 }
 
 export function usePeerReviews() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Отзывы, которые нужно написать
+  // Отзывы, которые нужно написать (запросы от коллег)
   const { data: reviewsToWrite = [], isLoading: isLoadingToWrite } = useQuery({
     queryKey: ['peer-reviews-to-write', user?.id],
     queryFn: async () => {
@@ -61,11 +73,52 @@ export function usePeerReviews() {
     enabled: !!user,
   });
 
+  // Запрос отзыва от коллеги
+  const requestReview = useMutation({
+    mutationFn: async (reviewerId: string) => {
+      const { data, error } = await supabase
+        .from('peer_reviews')
+        .insert({
+          reviewer_id: reviewerId,
+          reviewee_id: user!.id,
+          status: 'pending',
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['peer-reviews-received'] });
+      toast.success('Запрос на отзыв отправлен');
+    },
+    onError: (error) => {
+      toast.error('Ошибка: ' + error.message);
+    },
+  });
+
   const submitReview = useMutation({
-    mutationFn: async ({ id, score, comment }: { id: string; score: number; comment: string }) => {
+    mutationFn: async ({ 
+      id, 
+      collaboration_score, 
+      quality_score, 
+      communication_score, 
+      comment 
+    }: { 
+      id: string; 
+      collaboration_score: number; 
+      quality_score: number; 
+      communication_score: number; 
+      comment: string;
+    }) => {
+      const score = (collaboration_score + quality_score + communication_score) / 3;
       const { data, error } = await supabase
         .from('peer_reviews')
         .update({ 
+          collaboration_score,
+          quality_score,
+          communication_score,
           score, 
           comment, 
           status: 'submitted' 
@@ -90,6 +143,8 @@ export function usePeerReviews() {
     reviewsToWrite,
     reviewsReceived,
     isLoading: isLoadingToWrite || isLoadingReceived,
+    requestReview: requestReview.mutate,
+    isRequesting: requestReview.isPending,
     submitReview: submitReview.mutate,
     isSubmitting: submitReview.isPending,
   };

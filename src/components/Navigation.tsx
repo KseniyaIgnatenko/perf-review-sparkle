@@ -19,7 +19,7 @@ export const Navigation = () => {
     { icon: Home, label: "Главная", path: "/dashboard", roles: ['employee', 'manager', 'hr', 'admin'] },
     { icon: Target, label: "Мои цели", path: "/goals", roles: ['employee', 'manager', 'hr', 'admin'] },
     { icon: ClipboardList, label: "Самооценка", path: "/self-assessment", roles: ['employee', 'manager', 'hr', 'admin'] },
-    { icon: Users, label: "Оценка коллег", path: "/peer-review", badge: 2, badgeTooltip: "Ожидают вашей оценки", roles: ['employee', 'manager', 'hr', 'admin'] },
+    { icon: Users, label: "Оценка коллег", path: "/peer-review", roles: ['employee', 'manager', 'hr', 'admin'] },
     { icon: ClipboardCheck, label: "Панель менеджера", path: "/manager", roles: ['manager'] },
     { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'] },
     { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'] },
@@ -59,15 +59,6 @@ export const Navigation = () => {
                   >
                     <Icon className="w-4 h-4" />
                     <span className="text-sm font-medium">{item.label}</span>
-                    {item.badge && (
-                      <Badge 
-                        className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5"
-                        variant="destructive"
-                        title={item.badgeTooltip || ""}
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
                   </Link>
                 );
               })}

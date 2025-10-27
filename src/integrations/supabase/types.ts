@@ -207,10 +207,13 @@ export type Database = {
       }
       peer_reviews: {
         Row: {
+          collaboration_score: number | null
           comment: string | null
+          communication_score: number | null
           created_at: string | null
-          goal_id: string
+          goal_id: string | null
           id: string
+          quality_score: number | null
           reviewee_id: string
           reviewer_id: string
           score: number | null
@@ -218,10 +221,13 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          collaboration_score?: number | null
           comment?: string | null
+          communication_score?: number | null
           created_at?: string | null
-          goal_id: string
+          goal_id?: string | null
           id?: string
+          quality_score?: number | null
           reviewee_id: string
           reviewer_id: string
           score?: number | null
@@ -229,10 +235,13 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          collaboration_score?: number | null
           comment?: string | null
+          communication_score?: number | null
           created_at?: string | null
-          goal_id?: string
+          goal_id?: string | null
           id?: string
+          quality_score?: number | null
           reviewee_id?: string
           reviewer_id?: string
           score?: number | null
@@ -245,6 +254,20 @@ export type Database = {
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_reviews_reviewee_id_fkey"
+            columns: ["reviewee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
