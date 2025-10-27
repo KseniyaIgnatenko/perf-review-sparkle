@@ -21,13 +21,13 @@ export const Navigation = () => {
   const handleLogout = () => navigate("/login");
 
   return (
-    <nav className="bg-card/95 backdrop-blur-lg border-b border-border sticky top-0 z-50 shadow-md transition-all">
+    <nav className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link to="/dashboard" className="flex items-center gap-3 group">
-              <img src={winkLogo} alt="WINK" className="h-8 transition-transform group-hover:scale-105" />
-              <span className="font-bold text-lg group-hover:text-primary transition-colors">Performance Review</span>
+            <Link to="/dashboard" className="flex items-center gap-3">
+              <img src={winkLogo} alt="WINK" className="h-8" />
+              <span className="font-bold text-lg">Performance Review</span>
             </Link>
 
             <div className="hidden md:flex items-center gap-1">
@@ -40,27 +40,22 @@ export const Navigation = () => {
                     key={item.path}
                     to={item.path}
                     className={cn(
-                      "relative px-4 py-2 rounded-lg transition-all duration-300 flex items-center gap-2 group",
+                      "relative px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2",
                       isActive 
-                        ? "bg-gradient-primary text-white shadow-md" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-primary-light/50 hover:scale-105"
+                        ? "bg-primary/10 text-primary font-medium" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
-                    <Icon className={cn(
-                      "w-4 h-4 transition-transform",
-                      isActive && "scale-110"
-                    )} />
-                    <span className="text-sm font-semibold">{item.label}</span>
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm font-medium">{item.label}</span>
                     {item.badge && (
                       <Badge 
-                        className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5 bg-destructive text-destructive-foreground animate-pulse shadow-sm"
+                        className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5"
+                        variant="destructive"
                         title={item.badgeTooltip || ""}
                       >
                         {item.badge}
                       </Badge>
-                    )}
-                    {isActive && (
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-white/50 rounded-full" />
                     )}
                   </Link>
                 );
@@ -71,11 +66,11 @@ export const Navigation = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="gap-2 hover:bg-destructive/10 hover:text-destructive transition-all group" 
+            className="gap-2" 
             onClick={handleLogout}
           >
-            <LogOut className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-            <span className="hidden md:inline font-medium">Выйти</span>
+            <LogOut className="w-4 h-4" />
+            <span className="hidden md:inline">Выйти</span>
           </Button>
         </div>
       </div>
