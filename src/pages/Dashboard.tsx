@@ -1,11 +1,14 @@
 import { Navigation } from "@/components/Navigation";
 import { StageIndicator } from "@/components/StageIndicator";
 import { ProgressCard } from "@/components/ProgressCard";
+import { QuickStats } from "@/components/QuickStats";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, ClipboardList, Users, CheckCircle2, Plus, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { getProgressColor, getProgressBarColor } from "@/utils/progressHelpers";
 
 const stages = [
   { label: "Цели", status: "in-progress" as const },
@@ -33,6 +36,9 @@ export default function Dashboard() {
             Отслеживайте прогресс и управляйте своим развитием
           </p>
         </div>
+
+        {/* Quick Stats */}
+        <QuickStats />
 
         {/* Stage Progress */}
         <Card className="shadow-card transition-smooth hover:shadow-hover animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
@@ -82,11 +88,17 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                           <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-primary transition-smooth animate-progress-fill"
+                              className={cn(
+                                "h-full transition-smooth animate-progress-fill",
+                                getProgressBarColor(goal.progress)
+                              )}
                               style={{ width: `${goal.progress}%` }}
                             />
                           </div>
-                          <span className="text-xs font-semibold text-muted-foreground min-w-[2.5rem] text-right">
+                          <span className={cn(
+                            "text-xs font-bold min-w-[2.5rem] text-right",
+                            getProgressColor(goal.progress)
+                          )}>
                             {goal.progress}%
                           </span>
                         </div>

@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { getProgressColor } from "@/utils/progressHelpers";
 
 interface ProgressCardProps {
   title: string;
@@ -59,9 +60,11 @@ export const ProgressCard = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground font-medium">Прогресс</span>
-            <span className="font-bold text-base">{progress}%</span>
+            <span className={cn("font-bold text-base", getProgressColor(progress))}>
+              {progress}%
+            </span>
           </div>
-          <Progress value={progress} className="h-2.5" />
+          <Progress value={progress} className="h-2.5" progressColor={progress} />
         </div>
         {children}
       </CardContent>
