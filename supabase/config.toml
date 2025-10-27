@@ -1,1 +1,7 @@
 project_id = "zevlrzothrwmemspmgtz"
+
+[functions.create-test-employee]
+verify_jwt = false
+
+[functions.create-hr-user]
+verify_jwt = false

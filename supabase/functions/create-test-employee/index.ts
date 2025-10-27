@@ -18,21 +18,36 @@ Deno.serve(async (req) => {
       }
     )
 
-    // 1. Создаем пользователя через Admin API
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-      email: 'employee@wink.ru',
-      password: 'Test123!',
-      email_confirm: true,
-      user_metadata: {
-        full_name: 'Сидоров Иван Петрович'
+    // 1. Проверяем, существует ли уже пользователь с таким email
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    let userId: string
+    let isNewUser = false
+
+    const existingUser = existingUsers?.users.find(u => u.email === 'employee@wink.ru')
+    
+    if (existingUser) {
+      // Если пользователь существует, используем его ID
+      userId = existingUser.id
+      console.log('User already exists, using existing user:', userId)
+    } else {
+      // Создаем нового пользователя
+      const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+        email: 'employee@wink.ru',
+        password: 'Test123!',
+        email_confirm: true,
+        user_metadata: {
+          full_name: 'Сидоров Иван Петрович'
+        }
+      })
+
+      if (userError) {
+        throw new Error(`Failed to create user: ${userError.message}`)
       }
-    })
 
-    if (userError) {
-      throw new Error(`Failed to create user: ${userError.message}`)
+      userId = userData.user.id
+      isNewUser = true
+      console.log('Created new user:', userId)
     }
-
-    const userId = userData.user.id
 
     // 2. Обновляем профиль пользователя (устанавливаем отдел)
     const { error: profileError } = await supabaseAdmin
