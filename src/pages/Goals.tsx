@@ -38,6 +38,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
   }
 
   const isDraft = status === 'draft';
+  const canEditTasks = status === 'draft' || status === 'approved';
 
   return (
     <div className="space-y-2">
@@ -51,7 +52,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
             <Checkbox
               checked={task.is_done}
               onCheckedChange={() => handleToggleTask(task.id, task.is_done)}
-              disabled={!isDraft}
+              disabled={!canEditTasks}
             />
             <span className={cn("text-sm flex-1", task.is_done && "line-through text-muted-foreground")}>
               {task.title}
