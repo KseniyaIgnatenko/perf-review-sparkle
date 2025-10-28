@@ -9,7 +9,9 @@ export const getProgressColor = (progress: number): string => {
 };
 
 export const getProgressBarColor = (progress: number): string => {
-  if (progress < 30) {
+  if (progress >= 100) {
+    return "bg-success";
+  } else if (progress < 30) {
     return "bg-destructive";
   } else if (progress < 70) {
     return "bg-warning";

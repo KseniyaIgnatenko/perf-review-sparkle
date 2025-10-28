@@ -70,7 +70,7 @@ export default function Dashboard() {
       status: getStageStatus(hasCompletedPeerReviews, false, hasSelfAssessment)
     },
     { 
-      label: "Итоги", 
+      label: "Оценка руководителя", 
       status: getStageStatus(hasManagerFeedback, false, hasCompletedPeerReviews)
     },
   ];
@@ -202,22 +202,41 @@ export default function Dashboard() {
             status={completedAssessment ? "completed" : "not-started"}
           >
             <div className="space-y-4">
-              <div className="p-5 rounded-lg bg-gradient-subtle border border-border text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Статус: {completedAssessment ? 'Завершена' : 'Не начата'}
-                </p>
-                <p className="text-xl font-bold">{answeredQuestions}/{totalAssessmentQuestions} вопросов</p>
-                {completedAssessment && completedAssessment.total_score && (
-                  <p className="text-sm text-primary mt-2">
-                    Итоговый балл: {completedAssessment.total_score.toFixed(1)}
+              <div className="p-5 rounded-lg bg-gradient-subtle border border-border">
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Статус: {completedAssessment ? 'Завершена' : 'Не начата'}
                   </p>
-                )}
+                  <p className="text-2xl font-bold">
+                    {assessments.filter(a => a.status === 'submitted').length} / {approvedGoals.length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {approvedGoals.length === 1 ? 'цель оценена' : 'целей оценено'}
+                  </p>
+                  {completedAssessment && completedAssessment.total_score && (
+                    <p className="text-sm text-primary mt-2 pt-2 border-t border-border">
+                      Средний балл: {(assessments
+                        .filter(a => a.status === 'submitted' && a.total_score)
+                        .reduce((sum, a) => sum + (a.total_score || 0), 0) / 
+                        assessments.filter(a => a.status === 'submitted' && a.total_score).length
+                      ).toFixed(1)}
+                    </p>
+                  )}
+                </div>
               </div>
               {!completedAssessment && (
                 <Button className="w-full gap-2 gradient-primary hover:opacity-90 transition-smooth group" asChild>
                   <Link to="/self-assessment">
                     Начать самооценку
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              )}
+              {completedAssessment && approvedGoals.length > assessments.filter(a => a.status === 'submitted').length && (
+                <Button variant="outline" className="w-full gap-2" asChild>
+                  <Link to="/self-assessment">
+                    Продолжить оценку целей
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </Button>
               )}
@@ -242,62 +261,62 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {reviewsToWrite.length > 0 ? (
-                <>
-                  <div className="mb-4 p-3 rounded-lg bg-muted">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Всего запросов:</span>
-                      <span className="font-semibold">{reviewsToWrite.length}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mt-1">
-                      <span className="text-muted-foreground">Ожидают ответа:</span>
-                      <span className="font-semibold text-destructive">{pendingReviews.length}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mt-1">
-                      <span className="text-muted-foreground">Завершено:</span>
-                      <span className="font-semibold text-success">
-                        {reviewsToWrite.filter(r => r.status === 'submitted').length}
-                      </span>
-                    </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="p-4 rounded-lg bg-muted">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{reviewsToWrite.length}</p>
+                    <p className="text-sm text-muted-foreground">Я оцениваю</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {pendingReviews.length} ожидают ответа
+                    </p>
                   </div>
-                  
-                  {pendingReviews.length > 0 ? (
-                    <>
-                      {pendingReviews.slice(0, 2).map((review) => (
-                        <div key={review.id} className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
-                          <p className="font-semibold">
-                            {(review as any).reviewee?.full_name} просит оценить работу
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Цель: {(review as any).goal?.title}
-                          </p>
-                          <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
-                            <Link to="/peer-review">Перейти к оценке</Link>
-                          </Button>
-                        </div>
-                      ))}
-                      {pendingReviews.length > 2 && (
-                        <Button variant="ghost" className="w-full" asChild>
-                          <Link to="/peer-review">
-                            Показать все ({pendingReviews.length})
-                          </Link>
-                        </Button>
-                      )}
-                    </>
-                  ) : (
-                    <div className="p-6 text-center">
-                      <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-success" />
-                      <p className="text-sm font-medium">Все оценки завершены</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Вы завершили все запросы на оценку коллег
+                </div>
+                <div className="p-4 rounded-lg bg-muted">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{reviewsToWrite.filter(r => r.status === 'submitted').length}</p>
+                    <p className="text-sm text-muted-foreground">Завершено</p>
+                  </div>
+                </div>
+              </div>
+
+              {pendingReviews.length > 0 ? (
+                <>
+                  {pendingReviews.slice(0, 2).map((review) => (
+                    <div key={review.id} className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
+                      <p className="font-semibold">
+                        {(review as any).reviewee?.full_name} просит оценить работу
                       </p>
+                      <p className="text-sm text-muted-foreground">
+                        Цель: {(review as any).goal?.title || 'Не указана'}
+                      </p>
+                      <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
+                        <Link to="/peer-review">Перейти к оценке</Link>
+                      </Button>
                     </div>
+                  ))}
+                  {pendingReviews.length > 2 && (
+                    <Button variant="ghost" className="w-full" asChild>
+                      <Link to="/peer-review">
+                        Показать все ({pendingReviews.length})
+                      </Link>
+                    </Button>
                   )}
                 </>
+              ) : reviewsToWrite.length > 0 ? (
+                <div className="p-6 text-center">
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-success" />
+                  <p className="text-sm font-medium">Все оценки завершены</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Вы завершили все запросы на оценку коллег
+                  </p>
+                </div>
               ) : (
                 <div className="p-6 text-center text-muted-foreground">
                   <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Нет запросов на оценку</p>
+                  <p className="text-sm">Нет запросов на оценку</p>
+                  <Button variant="outline" size="sm" className="mt-3" asChild>
+                    <Link to="/peer-review">Запросить отзыв</Link>
+                  </Button>
                 </div>
               )}
             </CardContent>
