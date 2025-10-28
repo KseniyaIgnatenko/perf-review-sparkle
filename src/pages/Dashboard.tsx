@@ -16,12 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSelfAssessments } from "@/hooks/useSelfAssessments";
 import { useManagerFeedback } from "@/hooks/useManagerFeedback";
 
-const stages = [
-  { label: "Цели", status: "in-progress" as const },
-  { label: "Самооценка", status: "not-started" as const },
-  { label: "Оценка", status: "not-started" as const },
-  { label: "Итоги", status: "not-started" as const },
-];
+// Этапы оценочного цикла определяются динамически ниже в компоненте
 
 export default function Dashboard() {
   const { goals, isLoading: goalsLoading } = useGoals();
@@ -44,8 +39,41 @@ export default function Dashboard() {
   
   // Статус самооценки
   const completedAssessment = assessments.find(a => a.status === 'submitted');
-  const totalAssessmentQuestions = 6; // Количество вопросов в самооценке
+  const totalAssessmentQuestions = 6;
   const answeredQuestions = completedAssessment ? totalAssessmentQuestions : 0;
+
+  // Динамический расчет этапов цикла оценки
+  const hasApprovedGoals = approvedGoals.length > 0;
+  const hasSelfAssessment = !!completedAssessment;
+  const hasCompletedPeerReviews = reviewsToWrite.every(r => r.status === 'submitted');
+  const hasManagerFeedback = !!managerFeedback;
+
+  type StageStatus = "not-started" | "in-progress" | "completed";
+  
+  const getStageStatus = (condition: boolean, nextStageStarted: boolean, prevStageCompleted: boolean): StageStatus => {
+    if (condition) return "completed";
+    if (nextStageStarted || prevStageCompleted) return "in-progress";
+    return "not-started";
+  };
+
+  const stages = [
+    { 
+      label: "Цели", 
+      status: getStageStatus(hasApprovedGoals, false, totalGoals > 0)
+    },
+    { 
+      label: "Самооценка", 
+      status: getStageStatus(hasSelfAssessment, false, hasApprovedGoals)
+    },
+    { 
+      label: "Оценка коллег", 
+      status: getStageStatus(hasCompletedPeerReviews, false, hasSelfAssessment)
+    },
+    { 
+      label: "Итоги", 
+      status: getStageStatus(hasManagerFeedback, false, hasCompletedPeerReviews)
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -208,28 +236,67 @@ export default function Dashboard() {
                 </CardTitle>
                 {pendingReviews.length > 0 && (
                   <Badge className="bg-destructive text-destructive-foreground">
-                    {pendingReviews.length} {pendingReviews.length === 1 ? 'новый' : 'новых'}
+                    {pendingReviews.length} {pendingReviews.length === 1 ? 'новая' : 'новых'}
                   </Badge>
                 )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {pendingReviews.length > 0 ? (
-                pendingReviews.slice(0, 2).map((review) => (
-                  <div key={review.id} className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
-                    <p className="font-semibold">
-                      {(review as any).reviewee?.full_name} просит оценить работу
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Цель: {(review as any).goal?.title}
-                    </p>
-                    <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
-                      <Link to="/peer-review">Перейти к оценке</Link>
-                    </Button>
+              {reviewsToWrite.length > 0 ? (
+                <>
+                  <div className="mb-4 p-3 rounded-lg bg-muted">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Всего запросов:</span>
+                      <span className="font-semibold">{reviewsToWrite.length}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Ожидают ответа:</span>
+                      <span className="font-semibold text-destructive">{pendingReviews.length}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Завершено:</span>
+                      <span className="font-semibold text-success">
+                        {reviewsToWrite.filter(r => r.status === 'submitted').length}
+                      </span>
+                    </div>
                   </div>
-                ))
+                  
+                  {pendingReviews.length > 0 ? (
+                    <>
+                      {pendingReviews.slice(0, 2).map((review) => (
+                        <div key={review.id} className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
+                          <p className="font-semibold">
+                            {(review as any).reviewee?.full_name} просит оценить работу
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Цель: {(review as any).goal?.title}
+                          </p>
+                          <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
+                            <Link to="/peer-review">Перейти к оценке</Link>
+                          </Button>
+                        </div>
+                      ))}
+                      {pendingReviews.length > 2 && (
+                        <Button variant="ghost" className="w-full" asChild>
+                          <Link to="/peer-review">
+                            Показать все ({pendingReviews.length})
+                          </Link>
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="p-6 text-center">
+                      <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-success" />
+                      <p className="text-sm font-medium">Все оценки завершены</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Вы завершили все запросы на оценку коллег
+                      </p>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="p-6 text-center text-muted-foreground">
+                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>Нет запросов на оценку</p>
                 </div>
               )}
