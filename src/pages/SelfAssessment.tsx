@@ -188,7 +188,8 @@ export default function SelfAssessment() {
     );
   }
 
-  const approvedGoals = goals.filter(g => g.status === 'approved' || g.status === 'on_review');
+  // Доступны все цели кроме черновиков
+  const approvedGoals = goals.filter(g => g.status !== 'draft');
   
   // Получаем информацию о существующих самооценках
   const goalsWithAssessments = approvedGoals.map(goal => {
@@ -219,7 +220,7 @@ export default function SelfAssessment() {
                 Мои самооценки
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-2">
-                Выберите цель для проведения самооценки. Доступны утвержденные цели.
+                Выберите цель для проведения самооценки. Самооценку можно провести в любой момент после утверждения цели.
               </p>
             </CardHeader>
             <CardContent>
@@ -283,7 +284,7 @@ export default function SelfAssessment() {
           <CardContent>
             {approvedGoals.length === 0 ? (
               <p className="text-muted-foreground">
-                У вас нет утвержденных целей для самооценки. Сначала создайте и утвердите цели.
+                У вас нет целей для самооценки. Создайте цели и дождитесь их утверждения.
               </p>
             ) : (
               <Select value={selectedGoal} onValueChange={setSelectedGoal}>
