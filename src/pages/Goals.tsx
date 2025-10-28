@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGoals, useGoalTasks } from "@/hooks/useGoals";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,7 +30,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
   };
 
   const handleToggleTask = async (taskId: string, isDone: boolean) => {
-    await updateTask({ id: taskId, is_done: !isDone });
+    await updateTask({ id: taskId, goalId, is_done: !isDone });
   };
 
   if (isLoading) {
@@ -77,7 +78,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
           </div>
         )}
       </div>
-      {isDraft && !isAddingTask && tasks.length < 3 && (
+      {isDraft && !isAddingTask && tasks.length < 10 && (
         <Button
           variant="outline"
           size="sm"
@@ -99,6 +100,8 @@ export default function Goals() {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | GoalStatus>("all");
+  const [editingProgress, setEditingProgress] = useState<string | null>(null);
+  const [tempProgress, setTempProgress] = useState<number>(0);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -208,6 +211,22 @@ export default function Goals() {
     setFormData({ title: "", deadline: "", description: "", period: "" });
     setIsCreatingNew(false);
     setEditingId(null);
+  };
+
+  const handleUpdateProgress = (goalId: string, progress: number) => {
+    updateGoal({
+      id: goalId,
+      progress,
+    });
+    setEditingProgress(null);
+  };
+
+  const handleCompleteGoal = (goalId: string) => {
+    updateGoal({
+      id: goalId,
+      status: 'completed',
+      progress: 100,
+    });
   };
 
   if (isLoading) {
@@ -329,6 +348,22 @@ export default function Goals() {
           </Button>
         </div>
 
+        {/* Инструкция */}
+        <Card className="mb-6 bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="space-y-3 text-sm">
+              <p className="font-semibold text-foreground">💡 Как работает прогресс целей:</p>
+              <ul className="space-y-2 text-muted-foreground ml-4">
+                <li>• <strong>Добавьте задачи</strong> к вашей цели для автоматического расчета прогресса</li>
+                <li>• Отмечайте задачи как выполненные ✓ - прогресс обновится автоматически</li>
+                <li>• Или используйте кнопку <TrendingUp className="w-3 h-3 inline" /> для ручного обновления прогресса</li>
+                <li>• При 100% прогресса появится кнопка "Отметить как завершенную"</li>
+                <li>• Завершенные цели будут доступны для самооценки на соответствующей странице</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)} className="mb-6">
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="all">
@@ -398,22 +433,80 @@ export default function Goals() {
 
                     <GoalTasks goalId={goal.id} status={goal.status} />
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Прогресс</span>
-                        <span className={cn("font-bold", getProgressColor(goal.progress))}>
-                          {goal.progress}%
-                        </span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full transition-smooth animate-progress-fill",
-                            getProgressBarColor(goal.progress)
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Прогресс выполнения</span>
+                        <div className="flex items-center gap-2">
+                          <span className={cn("font-bold", getProgressColor(goal.progress))}>
+                            {goal.progress}%
+                          </span>
+                          {(goal.status === 'approved' || goal.status === 'draft') && editingProgress !== goal.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingProgress(goal.id);
+                                setTempProgress(goal.progress);
+                              }}
+                              className="h-6 px-2"
+                            >
+                              <TrendingUp className="w-3 h-3" />
+                            </Button>
                           )}
-                          style={{ width: `${goal.progress}%` }}
-                        />
+                        </div>
                       </div>
+
+                      {editingProgress === goal.id ? (
+                        <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <Slider
+                              value={[tempProgress]}
+                              onValueChange={([value]) => setTempProgress(value)}
+                              max={100}
+                              step={5}
+                              className="flex-1"
+                            />
+                            <span className="text-sm font-semibold min-w-[3rem] text-right">
+                              {tempProgress}%
+                            </span>
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingProgress(null)}
+                            >
+                              Отмена
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateProgress(goal.id, tempProgress)}
+                            >
+                              Сохранить
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full transition-smooth animate-progress-fill",
+                              getProgressBarColor(goal.progress)
+                            )}
+                            style={{ width: `${goal.progress}%` }}
+                          />
+                        </div>
+                      )}
+
+                      {goal.progress === 100 && goal.status !== 'completed' && (
+                        <Button
+                          className="w-full gap-2"
+                          onClick={() => handleCompleteGoal(goal.id)}
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          Отметить как завершенную
+                        </Button>
+                      )}
                     </div>
 
                     {goal.status === 'draft' && (

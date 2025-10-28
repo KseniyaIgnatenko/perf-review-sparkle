@@ -150,7 +150,7 @@ export function useGoalTasks(goalId: string | null) {
   });
 
   const updateTask = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<GoalTask> & { id: string }) => {
+    mutationFn: async ({ id, goalId, ...updates }: Partial<GoalTask> & { id: string; goalId?: string }) => {
       const { data, error } = await supabase
         .from('goal_tasks')
         .update(updates)
@@ -159,10 +159,32 @@ export function useGoalTasks(goalId: string | null) {
         .single();
       
       if (error) throw error;
+      
+      // Если обновляем статус задачи, пересчитываем прогресс цели
+      if (updates.is_done !== undefined && goalId) {
+        const { data: allTasks } = await supabase
+          .from('goal_tasks')
+          .select('*')
+          .eq('goal_id', goalId);
+        
+        if (allTasks && allTasks.length > 0) {
+          const completedTasks = allTasks.filter(t => t.is_done).length;
+          const progress = Math.round((completedTasks / allTasks.length) * 100);
+          
+          await supabase
+            .from('goals')
+            .update({ progress })
+            .eq('id', goalId);
+        }
+      }
+      
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['goal-tasks'] });
+      if (variables.goalId) {
+        queryClient.invalidateQueries({ queryKey: ['goals'] });
+      }
     },
   });
 

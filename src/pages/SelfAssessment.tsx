@@ -212,12 +212,15 @@ export default function SelfAssessment() {
 
         {/* Список целей с самооценками */}
         {goalsWithAssessments.length > 0 && (
-          <Card className="shadow-card">
+          <Card className="shadow-card mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
                 Мои самооценки
               </CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">
+                Выберите цель для проведения самооценки. Доступны утвержденные цели.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
