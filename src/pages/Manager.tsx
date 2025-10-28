@@ -297,12 +297,15 @@ export default function Manager() {
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <Button variant="outline" size="sm">
-                        Просмотр деталей
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        asChild
+                      >
+                        <a href={`/manager/feedback?employeeId=${employee.id}&employeeName=${encodeURIComponent(employee.full_name)}`}>
+                          Оценить сотрудника
+                        </a>
                       </Button>
-                      {employee.status === "in-review" && (
-                        <Button size="sm">Провести оценку</Button>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -361,12 +364,15 @@ export default function Manager() {
                         </div>
                       </div>
                       <div className="flex gap-2 justify-end">
-                        <Button variant="outline" size="sm">
-                          Просмотр деталей
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          asChild
+                        >
+                          <a href={`/manager/feedback?employeeId=${employee.id}&employeeName=${encodeURIComponent(employee.full_name)}`}>
+                            Оценить сотрудника
+                          </a>
                         </Button>
-                        {employee.status === "in-review" && (
-                          <Button size="sm">Провести оценку</Button>
-                        )}
                       </div>
                     </CardContent>
                   </Card>

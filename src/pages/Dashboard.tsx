@@ -13,6 +13,8 @@ import { useGoals } from "@/hooks/useGoals";
 import { usePeerReviews } from "@/hooks/usePeerReviews";
 import { useProfile } from "@/hooks/useProfiles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSelfAssessments } from "@/hooks/useSelfAssessments";
+import { useManagerFeedback } from "@/hooks/useManagerFeedback";
 
 const stages = [
   { label: "Цели", status: "in-progress" as const },
@@ -25,8 +27,10 @@ export default function Dashboard() {
   const { goals, isLoading: goalsLoading } = useGoals();
   const { reviewsToWrite, isLoading: reviewsLoading } = usePeerReviews();
   const { profile, isLoading: profileLoading } = useProfile();
+  const { assessments, isLoading: assessmentsLoading } = useSelfAssessments();
+  const { feedback: managerFeedback, isLoading: feedbackLoading } = useManagerFeedback();
 
-  const isLoading = goalsLoading || reviewsLoading || profileLoading;
+  const isLoading = goalsLoading || reviewsLoading || profileLoading || assessmentsLoading || feedbackLoading;
 
   // Считаем статистику по целям
   const approvedGoals = goals.filter(g => g.status === 'approved' || g.status === 'completed');
@@ -37,6 +41,11 @@ export default function Dashboard() {
 
   // Отзывы со статусом pending
   const pendingReviews = reviewsToWrite.filter(r => r.status === 'pending');
+  
+  // Статус самооценки
+  const completedAssessment = assessments.find(a => a.status === 'submitted');
+  const totalAssessmentQuestions = 6; // Количество вопросов в самооценке
+  const answeredQuestions = completedAssessment ? totalAssessmentQuestions : 0;
 
   if (isLoading) {
     return (
@@ -161,22 +170,29 @@ export default function Dashboard() {
           <ProgressCard
             title="Самооценка"
             icon={<ClipboardList className="w-5 h-5" />}
-            progress={0}
-            status="not-started"
+            progress={completedAssessment ? 100 : 0}
+            status={completedAssessment ? "completed" : "not-started"}
           >
             <div className="space-y-4">
               <div className="p-5 rounded-lg bg-gradient-subtle border border-border text-center">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Статус: Не начата
+                  Статус: {completedAssessment ? 'Завершена' : 'Не начата'}
                 </p>
-                <p className="text-xl font-bold">0/6 вопросов</p>
+                <p className="text-xl font-bold">{answeredQuestions}/{totalAssessmentQuestions} вопросов</p>
+                {completedAssessment && completedAssessment.total_score && (
+                  <p className="text-sm text-primary mt-2">
+                    Итоговый балл: {completedAssessment.total_score.toFixed(1)}
+                  </p>
+                )}
               </div>
-              <Button className="w-full gap-2 gradient-primary hover:opacity-90 transition-smooth group" asChild>
-                <Link to="/self-assessment">
-                  Начать самооценку
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
+              {!completedAssessment && (
+                <Button className="w-full gap-2 gradient-primary hover:opacity-90 transition-smooth group" asChild>
+                  <Link to="/self-assessment">
+                    Начать самооценку
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              )}
             </div>
           </ProgressCard>
         </div>
@@ -225,11 +241,33 @@ export default function Dashboard() {
               <CardTitle>Обратная связь от руководителя</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="p-6 rounded-lg bg-gradient-subtle border border-border text-center space-y-2">
-                <p className="text-muted-foreground leading-relaxed">
-                  Оценка руководителя будет доступна после завершения самооценки и оценки коллег
-                </p>
-              </div>
+              {managerFeedback ? (
+                <div className="space-y-4">
+                  <div className="p-5 rounded-lg bg-gradient-subtle border border-border">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-muted-foreground">Итоговая оценка:</span>
+                      <span className="text-2xl font-bold text-primary">
+                        {managerFeedback.total_score?.toFixed(1) || 'Н/Д'}
+                      </span>
+                    </div>
+                    {managerFeedback.comment && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-sm text-muted-foreground mb-1">Комментарий:</p>
+                        <p className="text-sm leading-relaxed">{managerFeedback.comment}</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Обновлено: {new Date(managerFeedback.updated_at).toLocaleDateString('ru-RU')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 rounded-lg bg-gradient-subtle border border-border text-center space-y-2">
+                  <p className="text-muted-foreground leading-relaxed">
+                    Оценка руководителя будет доступна после завершения самооценки и оценки коллег
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
