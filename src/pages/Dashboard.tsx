@@ -4,26 +4,32 @@ import { ProgressCard } from "@/components/ProgressCard";
 import { QuickStats } from "@/components/QuickStats";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, ClipboardList, Users, CheckCircle2, Plus, ArrowRight } from "lucide-react";
+import { Target, ClipboardList, Users, CheckCircle2, Plus, ArrowRight, Star, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getProgressColor, getProgressBarColor } from "@/utils/progressHelpers";
 import { useGoals } from "@/hooks/useGoals";
 import { usePeerReviews } from "@/hooks/usePeerReviews";
-import { useProfile } from "@/hooks/useProfiles";
+import { useProfile, useProfiles } from "@/hooks/useProfiles";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSelfAssessments } from "@/hooks/useSelfAssessments";
 import { useManagerFeedback } from "@/hooks/useManagerFeedback";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Этапы оценочного цикла определяются динамически ниже в компоненте
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { goals, isLoading: goalsLoading } = useGoals();
-  const { reviewsToWrite, isLoading: reviewsLoading } = usePeerReviews();
+  const { reviewsToWrite, reviewsReceived, isLoading: reviewsLoading, requestReview, isRequesting } = usePeerReviews();
   const { profile, isLoading: profileLoading } = useProfile();
+  const { profiles } = useProfiles();
   const { assessments, isLoading: assessmentsLoading } = useSelfAssessments();
   const { feedback: managerFeedback, isLoading: feedbackLoading } = useManagerFeedback();
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
 
   const isLoading = goalsLoading || reviewsLoading || profileLoading || assessmentsLoading || feedbackLoading;
 
@@ -36,6 +42,26 @@ export default function Dashboard() {
 
   // Отзывы со статусом pending
   const pendingReviews = reviewsToWrite.filter(r => r.status === 'pending');
+  
+  // Полученные оценки
+  const completedReceivedReviews = reviewsReceived.filter(r => r.status === 'submitted');
+  const averageRating = completedReceivedReviews.length > 0
+    ? completedReceivedReviews.reduce((sum, r) => sum + (r.score || 0), 0) / completedReceivedReviews.length
+    : 0;
+  
+  // Фильтруем коллег для запроса
+  const requestedReviewerIds = reviewsReceived.map(r => r.reviewer_id);
+  const availableColleagues = profiles.filter(
+    p => !requestedReviewerIds.includes(p.id) && p.id !== user?.id
+  );
+  
+  const handleRequestReview = (reviewerId: string) => {
+    requestReview(reviewerId, {
+      onSuccess: () => {
+        setRequestDialogOpen(false);
+      },
+    });
+  };
   
   // Статус самооценки
   const completedAssessment = assessments.find(a => a.status === 'submitted');
@@ -251,74 +277,121 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
-                  Оценка коллег
+                  Оценка от коллег
                 </CardTitle>
-                {pendingReviews.length > 0 && (
-                  <Badge className="bg-destructive text-destructive-foreground">
-                    {pendingReviews.length} {pendingReviews.length === 1 ? 'новая' : 'новых'}
-                  </Badge>
-                )}
+                <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Запросить
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Запросить отзыв от коллеги</DialogTitle>
+                      <DialogDescription>
+                        Выберите коллегу, у которого хотите запросить отзыв о вашей работе
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {availableColleagues.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Нет доступных коллег для запроса
+                        </p>
+                      ) : (
+                        availableColleagues.map((colleague) => (
+                          <Button
+                            key={colleague.id}
+                            variant="outline"
+                            className="w-full justify-start gap-2"
+                            onClick={() => handleRequestReview(colleague.id)}
+                            disabled={isRequesting}
+                          >
+                            <Send className="w-4 h-4" />
+                            {colleague.full_name}
+                          </Button>
+                        ))
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="p-4 rounded-lg bg-muted">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{reviewsToWrite.length}</p>
-                    <p className="text-sm text-muted-foreground">Я оцениваю</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {pendingReviews.length} ожидают ответа
+              {/* Средний рейтинг */}
+              {completedReceivedReviews.length > 0 ? (
+                <div className="p-5 rounded-lg bg-gradient-subtle border border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">Средний рейтинг:</span>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5 fill-primary text-primary" />
+                      <span className="text-2xl font-bold text-primary">
+                        {averageRating.toFixed(1)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/10</span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      Получено отзывов: {completedReceivedReviews.length}
                     </p>
                   </div>
                 </div>
-                <div className="p-4 rounded-lg bg-muted">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{reviewsToWrite.filter(r => r.status === 'submitted').length}</p>
-                    <p className="text-sm text-muted-foreground">Завершено</p>
-                  </div>
-                </div>
-              </div>
-
-              {pendingReviews.length > 0 ? (
-                <>
-                  {pendingReviews.slice(0, 2).map((review) => (
-                    <div key={review.id} className="p-4 rounded-lg border border-border bg-gradient-subtle space-y-3 hover:border-primary/30 transition-smooth hover:shadow-sm">
-                      <p className="font-semibold">
-                        {(review as any).reviewee?.full_name} просит оценить работу
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Цель: {(review as any).goal?.title || 'Не указана'}
-                      </p>
-                      <Button size="sm" variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-smooth" asChild>
-                        <Link to="/peer-review">Перейти к оценке</Link>
-                      </Button>
-                    </div>
-                  ))}
-                  {pendingReviews.length > 2 && (
-                    <Button variant="ghost" className="w-full" asChild>
-                      <Link to="/peer-review">
-                        Показать все ({pendingReviews.length})
-                      </Link>
-                    </Button>
-                  )}
-                </>
-              ) : reviewsToWrite.length > 0 ? (
-                <div className="p-6 text-center">
-                  <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-success" />
-                  <p className="text-sm font-medium">Все оценки завершены</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Вы завершили все запросы на оценку коллег
+              ) : (
+                <div className="p-6 text-center rounded-lg bg-muted/30">
+                  <Star className="w-12 h-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm font-medium mb-1">Отзывы пока не получены</p>
+                  <p className="text-xs text-muted-foreground">
+                    Запросите отзыв у коллег выше
                   </p>
                 </div>
-              ) : (
-                <div className="p-6 text-center text-muted-foreground">
-                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Нет запросов на оценку</p>
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link to="/peer-review">Запросить отзыв</Link>
-                  </Button>
+              )}
+
+              {/* Последние полученные отзывы */}
+              {completedReceivedReviews.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-muted-foreground">Последние отзывы:</p>
+                  {completedReceivedReviews.slice(0, 2).map((review) => (
+                    <div key={review.id} className="p-3 rounded-lg border border-border bg-card space-y-2">
+                      <div className="flex items-start justify-between">
+                        <p className="text-sm font-medium">
+                          {(review as any).reviewer?.full_name || 'Коллега'}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-primary text-primary" />
+                          <span className="text-sm font-bold text-primary">
+                            {review.score?.toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {review.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
+
+              {/* Статистика "Я оценил" */}
+              {reviewsToWrite.filter(r => r.status === 'submitted').length > 0 && (
+                <div className="pt-3 border-t border-border">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Я оценил коллег:</span>
+                    <span className="font-semibold">
+                      {reviewsToWrite.filter(r => r.status === 'submitted').length}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <Button variant="ghost" className="w-full gap-2 hover:bg-primary-light transition-smooth group" asChild>
+                <Link to="/peer-review">
+                  Все отзывы
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
 
