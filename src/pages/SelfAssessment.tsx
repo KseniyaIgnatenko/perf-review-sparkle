@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Send, CheckCircle2, FileText, Calendar, ListTodo } from "lucide-react";
+import { Save, Send, CheckCircle2, FileText, Calendar, ListTodo, Clock, FileEdit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useGoals, useGoalTasks } from "@/hooks/useGoals";
@@ -214,96 +214,104 @@ export default function SelfAssessment() {
         </div>
 
         {/* Список целей с самооценками */}
-        {goalsWithAssessments.length > 0 && (
-          <Card className="shadow-card mb-6">
+        {goalsWithAssessments.length === 0 ? (
+          <Card className="shadow-card">
+            <CardContent className="p-12 text-center">
+              <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-lg font-semibold mb-2">
+                Нет целей для самооценки
+              </p>
+              <p className="text-muted-foreground">
+                Создайте цели и дождитесь их утверждения
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Мои самооценки
+                Выберите цель для оценки
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-2">
-                Выберите цель для проведения самооценки. Самооценку можно провести в любой момент после утверждения цели.
+                Нажмите на цель, чтобы заполнить самооценку
               </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {goalsWithAssessments.map((goal) => (
-                  <div
-                    key={goal.id}
-                    className={`p-4 rounded-lg border-2 transition-all cursor-pointer hover:border-primary ${
-                      selectedGoal === goal.id ? 'border-primary bg-primary/5' : 'border-border'
-                    }`}
-                    onClick={() => setSelectedGoal(goal.id)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <h3 className="font-semibold">{goal.title}</h3>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          {goal.period && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {goal.period}
-                            </span>
-                          )}
-                          {goal.due_date && (
-                            <span>
-                              до {format(new Date(goal.due_date), "d MMMM yyyy", { locale: ru })}
-                            </span>
+                {goalsWithAssessments.map((goal) => {
+                  const isSelected = selectedGoal === goal.id;
+                  const isCompleted = goal.assessment?.status === 'submitted';
+                  const isDraft = goal.assessment?.status === 'draft';
+                  
+                  return (
+                    <div
+                      key={goal.id}
+                      className={cn(
+                        "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                        isSelected && "border-primary bg-primary/5 shadow-md",
+                        !isSelected && "border-border hover:border-primary/50 hover:shadow-sm"
+                      )}
+                      onClick={() => setSelectedGoal(goal.id)}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            {isCompleted && <CheckCircle2 className="w-5 h-5 text-success" />}
+                            <h3 className="font-semibold">{goal.title}</h3>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            {goal.period && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {goal.period}
+                              </span>
+                            )}
+                            {goal.due_date && (
+                              <span>
+                                до {format(new Date(goal.due_date), "d MMMM yyyy", { locale: ru })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          {isCompleted ? (
+                            <>
+                              <Badge variant="default" className="gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Отправлено
+                              </Badge>
+                              {goal.assessment?.total_score && (
+                                <span className="text-sm font-semibold text-primary">
+                                  Балл: {goal.assessment.total_score}
+                                </span>
+                              )}
+                            </>
+                          ) : isDraft ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <FileEdit className="w-3 h-3" />
+                              Черновик
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="gap-1">
+                              <Clock className="w-3 h-3" />
+                              Не заполнено
+                            </Badge>
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
-                        {goal.assessment ? (
-                          <>
-                            <Badge 
-                              variant={goal.assessment.status === 'submitted' ? 'default' : 'secondary'}
-                            >
-                              {goal.assessment.status === 'submitted' ? 'Отправлено' : 'Черновик'}
-                            </Badge>
-                            {goal.assessment.total_score && (
-                              <span className="text-sm font-semibold text-primary">
-                                Балл: {goal.assessment.total_score}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <Badge variant="outline">Не заполнено</Badge>
-                        )}
-                      </div>
+                      {isSelected && (
+                        <div className="mt-3 pt-3 border-t text-sm text-primary font-medium">
+                          👇 Заполните форму ниже
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         )}
-
-        {/* Goal Selection */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Выберите цель для оценки</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {approvedGoals.length === 0 ? (
-              <p className="text-muted-foreground">
-                У вас нет целей для самооценки. Создайте цели и дождитесь их утверждения.
-              </p>
-            ) : (
-              <Select value={selectedGoal} onValueChange={setSelectedGoal}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите цель" />
-                </SelectTrigger>
-                <SelectContent>
-                  {approvedGoals.map((goal) => (
-                    <SelectItem key={goal.id} value={goal.id}>
-                      {goal.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </CardContent>
-        </Card>
 
         {selectedGoal && (
           <>
