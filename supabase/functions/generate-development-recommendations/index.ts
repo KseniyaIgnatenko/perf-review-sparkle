@@ -15,21 +15,36 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      console.error('Missing Authorization header');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Base64URL-safe decode for JWT payload
+    const jwt = authHeader.replace('Bearer ', '').trim();
+    const parts = jwt.split('.');
+    if (parts.length !== 3) {
+      console.error('Invalid JWT format');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const base64url = parts[1];
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(base64url.length + (4 - (base64url.length % 4 || 4)), '=');
+    let payload: any;
+    try {
+      payload = JSON.parse(atob(base64));
+    } catch (e) {
+      console.error('Failed to decode JWT payload', e);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const userId = payload?.sub as string | undefined;
+    if (!userId) {
+      console.error('User ID not found in token');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Получаем JWT токен и декодируем его
-    const jwt = authHeader.replace('Bearer ', '');
-    const payload = JSON.parse(atob(jwt.split('.')[1]));
-    const userId = payload.sub;
-
-    if (!userId) {
-      throw new Error('User ID not found in token');
-    }
 
     console.log(`Generating recommendations for user: ${userId}`);
 
