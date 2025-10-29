@@ -6,15 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Send, CheckCircle2, FileText, Calendar } from "lucide-react";
+import { Save, Send, CheckCircle2, FileText, Calendar, ListTodo } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useGoals } from "@/hooks/useGoals";
+import { useGoals, useGoalTasks } from "@/hooks/useGoals";
 import { useSelfAssessments, useSelfAssessmentAnswers } from "@/hooks/useSelfAssessments";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StageIndicator } from "@/components/StageIndicator";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 export default function SelfAssessment() {
   const { goals, isLoading: goalsLoading } = useGoals();
@@ -24,6 +25,7 @@ export default function SelfAssessment() {
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   
   const { answers, saveAnswer } = useSelfAssessmentAnswers(currentAssessmentId);
+  const { tasks } = useGoalTasks(selectedGoal || "");
   
   const [formData, setFormData] = useState({
     results: "",
@@ -305,6 +307,52 @@ export default function SelfAssessment() {
 
         {selectedGoal && (
           <>
+            {/* Информация о выбранной цели */}
+            <Card className="shadow-card bg-muted/30">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ListTodo className="w-5 h-5" />
+                  Задачи по цели
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {tasks && tasks.length > 0 ? (
+                  <div className="space-y-2">
+                    {tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center gap-2 p-2 rounded border bg-background"
+                      >
+                        <CheckCircle2
+                          className={cn(
+                            "w-4 h-4",
+                            task.is_done ? "text-success" : "text-muted-foreground"
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            "text-sm flex-1",
+                            task.is_done && "line-through text-muted-foreground"
+                          )}
+                        >
+                          {task.title}
+                        </span>
+                        {task.is_done && (
+                          <Badge variant="outline" className="text-xs">
+                            Выполнено
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Нет задач для этой цели
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Индикатор прогресса по шагам */}
             <Card className="shadow-card">
               <CardContent className="pt-6">

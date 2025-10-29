@@ -96,20 +96,48 @@ export default function PeerReview() {
         <div className="mb-8">
           <h1 className="flex items-center gap-2 mb-2">
             <Users className="w-8 h-8 text-primary" />
-            Peer Review
+            Оценка от коллег
           </h1>
           <p className="text-muted-foreground text-lg">
-            Оцените работу коллег и просмотрите полученные отзывы
+            Оцените работу коллег и просмотрите отзывы о вашей работе
           </p>
         </div>
 
+        {/* Информационная карточка */}
+        <Card className="mb-6 bg-primary/5 border-primary/20">
+          <CardContent className="pt-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                  Я оцениваю коллег
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Здесь вы пишете отзывы о работе коллег, которые запросили у вас обратную связь
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Меня оценивают
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Здесь вы видите отзывы, которые коллеги оставили о вашей работе
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="reviewing" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="reviewing">
+            <TabsTrigger value="reviewing" className="gap-2">
+              <Send className="w-4 h-4" />
               Я оцениваю ({pendingReviews.length})
             </TabsTrigger>
-            <TabsTrigger value="reviewed">
-              Меня оценили ({reviewsReceived.length})
+            <TabsTrigger value="reviewed" className="gap-2">
+              <Users className="w-4 h-4" />
+              Меня оценивают ({reviewsReceived.length})
             </TabsTrigger>
           </TabsList>
 

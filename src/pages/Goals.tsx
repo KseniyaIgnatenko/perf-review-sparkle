@@ -9,13 +9,57 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive, TrendingUp } from "lucide-react";
+import { Plus, X, CheckCircle2, Clock, FileEdit, ListTodo, Archive, TrendingUp, AlertTriangle, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGoals, useGoalTasks } from "@/hooks/useGoals";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
 import { getProgressColor, getProgressBarColor } from "@/utils/progressHelpers";
+import { differenceInDays, isPast, isFuture } from "date-fns";
+
+// Функция для определения статуса дедлайна
+const getDeadlineStatus = (dueDate: string | null, goalStatus: string) => {
+  if (!dueDate || goalStatus === 'completed') return null;
+  
+  const deadline = new Date(dueDate);
+  const today = new Date();
+  const daysUntil = differenceInDays(deadline, today);
+  
+  if (isPast(deadline) && daysUntil < 0) {
+    return {
+      label: "Просрочено",
+      variant: "destructive" as const,
+      icon: AlertTriangle,
+      color: "text-destructive",
+    };
+  }
+  
+  if (daysUntil <= 7 && daysUntil >= 0) {
+    return {
+      label: `Осталось ${daysUntil} дн.`,
+      variant: "secondary" as const,
+      icon: Clock,
+      color: "text-warning",
+    };
+  }
+  
+  if (daysUntil > 7 && daysUntil <= 30) {
+    return {
+      label: `${daysUntil} дней`,
+      variant: "outline" as const,
+      icon: Calendar,
+      color: "text-muted-foreground",
+    };
+  }
+  
+  return {
+    label: `${daysUntil} дней`,
+    variant: "outline" as const,
+    icon: Calendar,
+    color: "text-muted-foreground",
+  };
+};
 
 const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
   const { tasks, isLoading, addTask, updateTask } = useGoalTasks(goalId);
@@ -412,12 +456,25 @@ export default function Goals() {
                           <Icon className="w-5 h-5 text-muted-foreground" />
                           <CardTitle className="text-xl">{goal.title}</CardTitle>
                         </div>
-                        {(goal.period || goal.due_date) && (
-                          <div className="flex gap-3 text-sm text-muted-foreground">
-                            {goal.period && <span>Период: {goal.period}</span>}
-                            {goal.due_date && <span>Срок: {new Date(goal.due_date).toLocaleDateString()}</span>}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-3 mt-2">
+                          {goal.period && (
+                            <Badge variant="outline" className="gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {goal.period}
+                            </Badge>
+                          )}
+                          {goal.due_date && (() => {
+                            const deadlineStatus = getDeadlineStatus(goal.due_date, goal.status);
+                            if (!deadlineStatus) return null;
+                            const DeadlineIcon = deadlineStatus.icon;
+                            return (
+                              <Badge variant={deadlineStatus.variant} className="gap-1">
+                                <DeadlineIcon className="w-3 h-3" />
+                                {deadlineStatus.label}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
                       </div>
                       <Badge variant={config.variant}>{config.label}</Badge>
                     </div>
