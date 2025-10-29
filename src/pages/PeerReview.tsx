@@ -178,9 +178,16 @@ export default function PeerReview() {
             ) : selectedRequest ? (
               <Card className="shadow-card">
                 <CardHeader>
-                  <CardTitle>Оценка коллеги</CardTitle>
+                  <CardTitle>
+                    Оценка коллеги: {pendingReviews.find(r => r.id === selectedRequest)?.reviewee?.full_name || 'Коллега'}
+                  </CardTitle>
                   <CardDescription>
                     Заполните все поля и оцените работу коллеги
+                    {pendingReviews.find(r => r.id === selectedRequest)?.goal && (
+                      <span className="block mt-1">
+                        Цель: {pendingReviews.find(r => r.id === selectedRequest)?.goal?.title}
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
