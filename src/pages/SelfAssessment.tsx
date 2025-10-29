@@ -201,6 +201,10 @@ export default function SelfAssessment() {
       assessment,
     };
   });
+  
+  // Проверяем статус текущей самооценки
+  const currentAssessment = assessments?.find(a => a.id === currentAssessmentId);
+  const isSubmitted = currentAssessment?.status === 'submitted';
 
   return (
     <div className="min-h-screen bg-background">
@@ -378,11 +382,31 @@ export default function SelfAssessment() {
             </Card>
 
             {/* Индикатор прогресса по шагам */}
-            <Card className="shadow-card">
-              <CardContent className="pt-6">
-                <StageIndicator stages={stages} />
-              </CardContent>
-            </Card>
+            {!isSubmitted && (
+              <Card className="shadow-card">
+                <CardContent className="pt-6">
+                  <StageIndicator stages={stages} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Уведомление об отправленной оценке */}
+            {isSubmitted && (
+              <Card className="shadow-card bg-success/5 border-success/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-success" />
+                    <div>
+                      <p className="font-semibold text-foreground">Самооценка отправлена</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Эта самооценка уже отправлена и недоступна для редактирования. 
+                        Итоговый балл: <span className="font-semibold text-primary">{currentAssessment?.total_score}</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Questions */}
             <Card className="shadow-card">
@@ -413,6 +437,7 @@ export default function SelfAssessment() {
                         value={formData.results}
                         onChange={(e) => setFormData({ ...formData, results: e.target.value })}
                         rows={4}
+                        disabled={isSubmitted}
                       />
                     </AccordionContent>
                   </AccordionItem>
@@ -433,6 +458,7 @@ export default function SelfAssessment() {
                         value={formData.contribution}
                         onChange={(e) => setFormData({ ...formData, contribution: e.target.value })}
                         rows={4}
+                        disabled={isSubmitted}
                       />
                     </AccordionContent>
                   </AccordionItem>
@@ -453,6 +479,7 @@ export default function SelfAssessment() {
                         value={formData.skills}
                         onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                         rows={4}
+                        disabled={isSubmitted}
                       />
                     </AccordionContent>
                   </AccordionItem>
@@ -473,6 +500,7 @@ export default function SelfAssessment() {
                         value={formData.improvements}
                         onChange={(e) => setFormData({ ...formData, improvements: e.target.value })}
                         rows={4}
+                        disabled={isSubmitted}
                       />
                     </AccordionContent>
                   </AccordionItem>
@@ -501,6 +529,7 @@ export default function SelfAssessment() {
                         min={1}
                         max={10}
                         step={1}
+                        disabled={isSubmitted}
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>1 - Требует улучшения</span>
@@ -533,6 +562,7 @@ export default function SelfAssessment() {
                         min={1}
                         max={10}
                         step={1}
+                        disabled={isSubmitted}
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
                         <span>1 - Не удовлетворен</span>
@@ -558,16 +588,18 @@ export default function SelfAssessment() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 justify-end">
-                  <Button variant="outline" className="gap-2" onClick={handleSaveDraft}>
-                    <Save className="w-4 h-4" />
-                    Сохранить черновик
-                  </Button>
-                  <Button className="gap-2" onClick={handleSubmit}>
-                    <Send className="w-4 h-4" />
-                    Отправить самооценку
-                  </Button>
-                </div>
+                {!isSubmitted && (
+                  <div className="flex gap-3 justify-end">
+                    <Button variant="outline" className="gap-2" onClick={handleSaveDraft}>
+                      <Save className="w-4 h-4" />
+                      Сохранить черновик
+                    </Button>
+                    <Button className="gap-2" onClick={handleSubmit}>
+                      <Send className="w-4 h-4" />
+                      Отправить самооценку
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </>
