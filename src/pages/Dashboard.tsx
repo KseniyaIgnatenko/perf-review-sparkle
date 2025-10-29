@@ -347,33 +347,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Последние полученные отзывы */}
-              {completedReceivedReviews.length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-muted-foreground">Последние отзывы:</p>
-                  {completedReceivedReviews.slice(0, 2).map((review) => (
-                    <div key={review.id} className="p-3 rounded-lg border border-border bg-card space-y-2">
-                      <div className="flex items-start justify-between">
-                        <p className="text-sm font-medium">
-                          {(review as any).reviewer?.full_name || 'Коллега'}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-primary text-primary" />
-                          <span className="text-sm font-bold text-primary">
-                            {review.score?.toFixed(1)}
-                          </span>
-                        </div>
-                      </div>
-                      {review.comment && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {review.comment}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* Статистика "Я оценил" */}
               {reviewsToWrite.filter(r => r.status === 'submitted').length > 0 && (
                 <div className="pt-3 border-t border-border">
