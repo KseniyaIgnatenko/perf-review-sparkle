@@ -93,41 +93,53 @@ export default function PeerReview() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="flex items-center gap-2 mb-2">
-            <Users className="w-8 h-8 text-primary" />
-            Оценка от коллег
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Оцените работу коллег и просмотрите отзывы о вашей работе
-          </p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="flex items-center gap-2 mb-2">
+              <Users className="w-8 h-8 text-primary" />
+              Оценка от коллег
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Оцените работу коллег и просмотрите отзывы о вашей работе
+            </p>
+          </div>
+          <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Запросить отзыв
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Запросить отзыв от коллеги</DialogTitle>
+                <DialogDescription>
+                  Выберите коллегу, у которого хотите запросить отзыв о вашей работе
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {availableColleagues.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Нет доступных коллег для запроса
+                  </p>
+                ) : (
+                  availableColleagues.map((colleague) => (
+                    <Button
+                      key={colleague.id}
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={() => handleRequestReview(colleague.id)}
+                      disabled={isRequesting}
+                    >
+                      <Send className="w-4 h-4" />
+                      {colleague.full_name}
+                    </Button>
+                  ))
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-
-        {/* Информационная карточка */}
-        <Card className="mb-6 bg-primary/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Send className="w-4 h-4" />
-                  Я оцениваю коллег
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Здесь вы пишете отзывы о работе коллег, которые запросили у вас обратную связь
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Меня оценивают
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Здесь вы видите отзывы, которые коллеги оставили о вашей работе
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <Tabs defaultValue="reviewing" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
@@ -142,52 +154,24 @@ export default function PeerReview() {
           </TabsList>
 
           <TabsContent value="reviewing" className="space-y-4">
-            <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Запросить отзыв
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Запросить отзыв от коллеги</DialogTitle>
-                  <DialogDescription>
-                    Выберите коллегу, у которого хотите запросить отзыв о вашей работе
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {availableColleagues.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Нет доступных коллег для запроса
-                    </p>
-                  ) : (
-                    availableColleagues.map((colleague) => (
-                      <Button
-                        key={colleague.id}
-                        variant="outline"
-                        className="w-full justify-start gap-2"
-                        onClick={() => handleRequestReview(colleague.id)}
-                        disabled={isRequesting}
-                      >
-                        <Send className="w-4 h-4" />
-                        {colleague.full_name}
-                      </Button>
-                    ))
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+            {/* Инструкция для таба "Я оцениваю" */}
+            <Card className="bg-muted/30 border-muted">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>В этом разделе:</strong> вы пишете отзывы о работе коллег, которые запросили у вас обратную связь
+                </p>
+              </CardContent>
+            </Card>
 
             {pendingReviews.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
-                  <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-success" />
+                  <Send className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                   <p className="text-lg font-semibold mb-2">
-                    Все отзывы отправлены!
+                    Нет запросов на оценку
                   </p>
                   <p className="text-muted-foreground">
-                    У вас нет активных запросов на оценку
+                    Когда коллеги запросят у вас отзыв, они появятся здесь
                   </p>
                 </CardContent>
               </Card>
@@ -334,6 +318,15 @@ export default function PeerReview() {
           </TabsContent>
 
           <TabsContent value="reviewed" className="space-y-4">
+            {/* Инструкция для таба "Меня оценивают" */}
+            <Card className="bg-muted/30 border-muted">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>В этом разделе:</strong> вы видите отзывы, которые коллеги оставили о вашей работе. Используйте кнопку "Запросить отзыв" выше, чтобы попросить обратную связь
+                </p>
+              </CardContent>
+            </Card>
+
             {reviewsReceived.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
@@ -342,7 +335,7 @@ export default function PeerReview() {
                     Отзывы пока не получены
                   </p>
                   <p className="text-muted-foreground">
-                    Запросите отзыв у коллег, чтобы получить обратную связь
+                    Нажмите "Запросить отзыв" выше, чтобы получить обратную связь от коллег
                   </p>
                 </CardContent>
               </Card>
