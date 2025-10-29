@@ -6,21 +6,32 @@ import { FileText, Download, Eye, TrendingUp, Target, Users } from "lucide-react
 import { useReports } from "@/hooks/useReports";
 import { useGoals } from "@/hooks/useGoals";
 import { usePeerReviews } from "@/hooks/usePeerReviews";
+import { useRecommendations } from "@/hooks/useRecommendations";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Reports() {
   const { reports, isLoading: reportsLoading } = useReports();
   const { goals, isLoading: goalsLoading } = useGoals();
   const { reviewsReceived, isLoading: reviewsLoading } = usePeerReviews();
+  const { latestRecommendation, isLoading: recommendationsLoading } = useRecommendations();
   const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const isLoading = reportsLoading || goalsLoading || reviewsLoading;
+  // Загружаем последние сохраненные рекомендации при монтировании
+  useEffect(() => {
+    if (latestRecommendation && !aiRecommendation) {
+      setAiRecommendation(latestRecommendation.recommendation_text);
+    }
+  }, [latestRecommendation]);
+
+  const isLoading = reportsLoading || goalsLoading || reviewsLoading || recommendationsLoading;
 
   if (isLoading) {
     return (
@@ -63,9 +74,11 @@ export default function Reports() {
       
       if (data?.recommendation) {
         setAiRecommendation(data.recommendation);
+        // Обновляем кэш рекомендаций
+        queryClient.invalidateQueries({ queryKey: ['recommendations'] });
         toast({
           title: "Рекомендации сгенерированы",
-          description: "AI анализ выполнен успешно",
+          description: "AI анализ выполнен успешно и сохранен",
         });
       }
     } catch (error: any) {
@@ -221,6 +234,11 @@ export default function Reports() {
                 </CardTitle>
                 <CardDescription>
                   AI анализ на основе ваших целей, оценок коллег и самооценки
+                  {latestRecommendation && (
+                    <span className="block text-xs mt-1">
+                      Последнее обновление: {new Date(latestRecommendation.created_at).toLocaleString('ru-RU')}
+                    </span>
+                  )}
                 </CardDescription>
               </div>
               <Button
@@ -236,7 +254,7 @@ export default function Reports() {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    {aiRecommendation ? 'Обновить' : 'Получить рекомендации'}
+                    {aiRecommendation ? 'Перегенерировать' : 'Получить рекомендации'}
                   </>
                 )}
               </Button>

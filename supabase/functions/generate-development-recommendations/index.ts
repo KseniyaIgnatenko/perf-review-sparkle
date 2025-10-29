@@ -175,6 +175,21 @@ ${managerFeedback?.map(f => `
 
     console.log('Recommendation generated successfully');
 
+    // Сохраняем рекомендацию в базу данных
+    const { error: saveError } = await supabase
+      .from('development_recommendations')
+      .insert({
+        user_id: userId,
+        recommendation_text: recommendation
+      });
+
+    if (saveError) {
+      console.error('Failed to save recommendation:', saveError);
+      // Не блокируем ответ, если сохранение не удалось
+    } else {
+      console.log('Recommendation saved to database');
+    }
+
     return new Response(
       JSON.stringify({ recommendation }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
