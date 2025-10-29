@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.create-hr-user]
 verify_jwt = true
+
+[functions.generate-development-recommendations]
+verify_jwt = true
