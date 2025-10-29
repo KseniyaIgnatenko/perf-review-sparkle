@@ -19,17 +19,19 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('Unauthorized');
+    // Получаем JWT токен и декодируем его
+    const jwt = authHeader.replace('Bearer ', '');
+    const payload = JSON.parse(atob(jwt.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      throw new Error('User ID not found in token');
     }
 
-    console.log(`Generating recommendations for user: ${user.id}`);
+    console.log(`Generating recommendations for user: ${userId}`);
 
     // Собираем данные пользователя
     const [
@@ -39,22 +41,22 @@ serve(async (req) => {
       { data: selfAssessments },
       { data: managerFeedback }
     ] = await Promise.all([
-      supabase.from('profiles').select('full_name, role').eq('id', user.id).single(),
+      supabase.from('profiles').select('full_name, role').eq('id', userId).single(),
       supabase.from('peer_reviews')
         .select('score, comment, collaboration_score, communication_score, quality_score, status')
-        .eq('reviewee_id', user.id)
+        .eq('reviewee_id', userId)
         .eq('status', 'submitted'),
       supabase.from('goals')
         .select('title, description, status, progress, due_date')
-        .eq('user_id', user.id),
+        .eq('user_id', userId),
       supabase.from('self_assessments')
         .select('total_score, status, created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(5),
       supabase.from('manager_feedbacks')
         .select('total_score, comment, created_at')
-        .eq('employee_id', user.id)
+        .eq('employee_id', userId)
         .order('created_at', { ascending: false })
         .limit(3)
     ]);
