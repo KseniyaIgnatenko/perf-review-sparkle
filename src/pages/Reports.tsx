@@ -7,18 +7,23 @@ import { useReports } from "@/hooks/useReports";
 import { useGoals } from "@/hooks/useGoals";
 import { usePeerReviews } from "@/hooks/usePeerReviews";
 import { useRecommendations } from "@/hooks/useRecommendations";
+import { useSelfAssessments, useSelfAssessmentAnswers } from "@/hooks/useSelfAssessments";
+import { useManagerFeedback } from "@/hooks/useManagerFeedback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import * as XLSX from "xlsx";
 
 export default function Reports() {
   const { reports, isLoading: reportsLoading } = useReports();
   const { goals, isLoading: goalsLoading } = useGoals();
   const { reviewsReceived, isLoading: reviewsLoading } = usePeerReviews();
   const { latestRecommendation, isLoading: recommendationsLoading } = useRecommendations();
+  const { assessments, isLoading: assessmentsLoading } = useSelfAssessments();
+  const { feedback, isLoading: feedbackLoading } = useManagerFeedback();
   const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -31,7 +36,7 @@ export default function Reports() {
     }
   }, [latestRecommendation]);
 
-  const isLoading = reportsLoading || goalsLoading || reviewsLoading || recommendationsLoading;
+  const isLoading = reportsLoading || goalsLoading || reviewsLoading || recommendationsLoading || assessmentsLoading || feedbackLoading;
 
   if (isLoading) {
     return (
@@ -93,6 +98,77 @@ export default function Reports() {
     }
   };
 
+  const handleGenerateXLSReport = async () => {
+    try {
+      // Создаем новую книгу
+      const wb = XLSX.utils.book_new();
+
+      // Лист 1: Мои цели и задачи
+      const goalsData = goals.map(goal => ({
+        'Название': goal.title,
+        'Описание': goal.description || '',
+        'Период': goal.period || '',
+        'Статус': goal.status,
+        'Прогресс': `${goal.progress}%`,
+        'Срок': goal.due_date || '',
+      }));
+      const goalsSheet = XLSX.utils.json_to_sheet(goalsData);
+      XLSX.utils.book_append_sheet(wb, goalsSheet, 'Цели и задачи');
+
+      // Лист 2: Самооценка
+      const selfAssessmentData = assessments.map(assessment => ({
+        'ID оценки': assessment.id,
+        'Цель': assessment.goal_id,
+        'Статус': assessment.status,
+        'Общий балл': assessment.total_score || 'Не установлен',
+        'Дата создания': new Date(assessment.created_at).toLocaleDateString('ru-RU'),
+      }));
+      const selfAssessmentSheet = XLSX.utils.json_to_sheet(selfAssessmentData);
+      XLSX.utils.book_append_sheet(wb, selfAssessmentSheet, 'Самооценка');
+
+      // Лист 3: Оценка коллег
+      const peerReviewsData = reviewsReceived.map(review => ({
+        'Рецензент': review.reviewer?.full_name || 'Неизвестно',
+        'Оценка': review.score || '',
+        'Качество работы': review.quality_score || '',
+        'Коммуникация': review.communication_score || '',
+        'Сотрудничество': review.collaboration_score || '',
+        'Комментарий': review.comment || '',
+        'Статус': review.status,
+        'Дата': new Date(review.created_at).toLocaleDateString('ru-RU'),
+      }));
+      const peerReviewsSheet = XLSX.utils.json_to_sheet(peerReviewsData);
+      XLSX.utils.book_append_sheet(wb, peerReviewsSheet, 'Оценка коллег');
+
+      // Лист 4: Оценка менеджера
+      const managerFeedbackData = feedback ? [{
+        'Общий балл': feedback.total_score || 'Не установлен',
+        'Комментарий': feedback.comment || 'Нет комментария',
+        'Дата создания': new Date(feedback.created_at).toLocaleDateString('ru-RU'),
+        'Дата обновления': new Date(feedback.updated_at).toLocaleDateString('ru-RU'),
+      }] : [];
+      const managerFeedbackSheet = XLSX.utils.json_to_sheet(
+        managerFeedbackData.length > 0 ? managerFeedbackData : [{ 'Сообщение': 'Оценка менеджера пока не доступна' }]
+      );
+      XLSX.utils.book_append_sheet(wb, managerFeedbackSheet, 'Оценка менеджера');
+
+      // Генерируем и скачиваем файл
+      XLSX.writeFile(wb, `Отчет_${new Date().toLocaleDateString('ru-RU')}.xlsx`);
+
+      toast({
+        title: "Отчет сгенерирован",
+        description: "XLS файл успешно загружен",
+      });
+    } catch (error: any) {
+      console.error('Error generating XLS report:', error);
+      toast({
+        title: "Ошибка",
+        description: error.message || "Не удалось сгенерировать отчет",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -140,24 +216,19 @@ export default function Reports() {
                   <span className="text-sm text-muted-foreground">отзывов</span>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <FileText className="w-4 h-4" />
-                  <span className="text-sm">Отчеты</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-primary">{reports.length}</span>
-                  <span className="text-sm text-muted-foreground">доступно</span>
-                </div>
-              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Reports List */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold">Доступные отчеты</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Доступные отчеты</h2>
+            <Button onClick={handleGenerateXLSReport} className="gap-2">
+              <Download className="w-4 h-4" />
+              Сгенерировать отчет XLS
+            </Button>
+          </div>
           
           {reports.length === 0 ? (
             <Card>
