@@ -34,7 +34,7 @@ export default function Dashboard() {
   const isLoading = goalsLoading || reviewsLoading || profileLoading || assessmentsLoading || feedbackLoading;
 
   // Считаем статистику по целям
-  const approvedGoals = goals.filter(g => g.status === 'approved' || g.status === 'completed');
+  const activeGoals = goals.filter(g => g.status === 'draft' || g.status === 'completed');
   const totalGoals = goals.length;
   const averageProgress = totalGoals > 0 
     ? Math.round(goals.reduce((sum, g) => sum + g.progress, 0) / totalGoals)
@@ -69,7 +69,7 @@ export default function Dashboard() {
   const answeredQuestions = completedAssessment ? totalAssessmentQuestions : 0;
 
   // Динамический расчет этапов цикла оценки
-  const hasApprovedGoals = approvedGoals.length > 0;
+  const hasActiveGoals = activeGoals.length > 0;
   const hasSelfAssessment = !!completedAssessment;
   const hasReceivedPeerReviews = completedReceivedReviews.length > 0;
   const hasManagerFeedback = !!managerFeedback;
@@ -85,11 +85,11 @@ export default function Dashboard() {
   const stages = [
     { 
       label: "Цели", 
-      status: getStageStatus(hasApprovedGoals, false, totalGoals > 0)
+      status: getStageStatus(hasActiveGoals, false, totalGoals > 0)
     },
     { 
       label: "Самооценка", 
-      status: getStageStatus(hasSelfAssessment, false, hasApprovedGoals)
+      status: getStageStatus(hasSelfAssessment, false, hasActiveGoals)
     },
     { 
       label: "Оценка коллег", 
@@ -158,7 +158,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {approvedGoals.length} {approvedGoals.length === 1 ? 'цель' : 'целей'} утверждено
+                  {activeGoals.length} {activeGoals.length === 1 ? 'активная цель' : 'активных целей'}
                 </span>
                 <Button size="sm" className="gap-2" asChild>
                   <Link to="/goals">
@@ -169,7 +169,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-3">
-                {approvedGoals.slice(0, 3).map((goal) => (
+                {activeGoals.slice(0, 3).map((goal) => (
                   <div
                     key={goal.id}
                     className="p-4 rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all duration-300 cursor-pointer hover:-translate-y-0.5 bg-card"
@@ -178,7 +178,7 @@ export default function Dashboard() {
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{goal.title}</p>
-                          {goal.status === 'approved' && (
+                          {goal.status === 'completed' && (
                             <CheckCircle2 className="w-4 h-4 text-success" />
                           )}
                         </div>
@@ -234,10 +234,10 @@ export default function Dashboard() {
                     Статус: {completedAssessment ? 'Завершена' : 'Не начата'}
                   </p>
                   <p className="text-2xl font-bold">
-                    {assessments.filter(a => a.status === 'submitted').length} / {approvedGoals.length}
+                    {assessments.filter(a => a.status === 'submitted').length} / {activeGoals.length}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {approvedGoals.length === 1 ? 'цель оценена' : 'целей оценено'}
+                    {activeGoals.length === 1 ? 'цель оценена' : 'целей оценено'}
                   </p>
                   {completedAssessment && completedAssessment.total_score && (
                     <p className="text-sm text-primary mt-2 pt-2 border-t border-border">
@@ -258,7 +258,7 @@ export default function Dashboard() {
                   </Link>
                 </Button>
               )}
-              {completedAssessment && approvedGoals.length > assessments.filter(a => a.status === 'submitted').length && (
+              {completedAssessment && activeGoals.length > assessments.filter(a => a.status === 'submitted').length && (
                 <Button variant="outline" className="w-full gap-2" asChild>
                   <Link to="/self-assessment">
                     Продолжить оценку целей

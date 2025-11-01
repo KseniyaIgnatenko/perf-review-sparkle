@@ -44,7 +44,7 @@ const GoalTasksView = ({ goalId }: { goalId: string }) => {
 
 export default function Manager() {
   const { teamMembers, isLoading } = useTeamMembers();
-  const { goals, isLoading: isLoadingGoals, approveGoal, rejectGoal, isApproving, isRejecting } = useManagerGoals();
+  const { goals, isLoading: isLoadingGoals } = useManagerGoals();
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -81,12 +81,9 @@ export default function Manager() {
 
   const completedCount = teamMembers.filter((e) => e.status === "completed").length;
   const inReviewCount = teamMembers.filter((e) => e.status === "in-review").length;
-  const goalsToReviewCount = goals.filter((g) => g.status === "on_review").length;
 
   const statusConfig = {
     draft: { label: "Черновик", variant: "secondary" as const },
-    on_review: { label: "На проверке", variant: "default" as const },
-    approved: { label: "Утверждена", variant: "outline" as const },
     completed: { label: "Завершена", variant: "outline" as const },
   };
 
@@ -141,90 +138,6 @@ export default function Manager() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Goals Approval Section */}
-        <Card className="shadow-card mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Цели на утверждение
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  {goalsToReviewCount === 0 
-                    ? 'Нет целей, ожидающих утверждения' 
-                    : `${goalsToReviewCount} ${goalsToReviewCount === 1 ? 'цель требует' : 'целей требуют'} вашего утверждения`
-                  }
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoadingGoals ? (
-              <Skeleton className="h-32" />
-            ) : goalsToReviewCount === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  Все цели проверены
-                </p>
-              </div>
-            ) : (
-              goals
-                .filter((goal) => goal.status === "on_review")
-                .map((goal) => (
-                  <div key={goal.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold">{goal.title}</h4>
-                          <Badge variant={statusConfig[goal.status].variant}>
-                            {statusConfig[goal.status].label}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Сотрудник: {goal.employee_name}
-                        </p>
-                        {goal.description && (
-                          <p className="text-sm leading-relaxed mb-2">{goal.description}</p>
-                        )}
-                        <div className="flex gap-4 text-xs text-muted-foreground mb-3">
-                          {goal.period && <span>Период: {goal.period}</span>}
-                          {goal.due_date && (
-                            <span>Срок: {new Date(goal.due_date).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                        <GoalTasksView goalId={goal.id} />
-                      </div>
-                    </div>
-                    <Separator />
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => rejectGoal(goal.id)}
-                        disabled={isRejecting || isApproving}
-                        className="gap-2"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        На доработку
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => approveGoal(goal.id)}
-                        disabled={isApproving || isRejecting}
-                        className="gap-2"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Утвердить
-                      </Button>
-                    </div>
-                  </div>
-                ))
-            )}
-          </CardContent>
-        </Card>
 
         {/* Employees List */}
         <Tabs defaultValue="all" className="space-y-4">

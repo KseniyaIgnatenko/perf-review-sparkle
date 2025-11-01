@@ -190,11 +190,11 @@ export default function SelfAssessment() {
     );
   }
 
-  // Доступны все цели кроме черновиков
-  const approvedGoals = goals.filter(g => g.status !== 'draft');
+  // Доступны все цели
+  const availableGoals = goals;
   
   // Получаем информацию о существующих самооценках
-  const goalsWithAssessments = approvedGoals.map(goal => {
+  const goalsWithAssessments = availableGoals.map(goal => {
     const assessment = assessments?.find(a => a.goal_id === goal.id);
     return {
       ...goal,

@@ -7,7 +7,7 @@ export interface TeamMemberGoal {
   id: string;
   title: string;
   description: string | null;
-  status: 'draft' | 'on_review' | 'approved' | 'completed';
+  status: 'draft' | 'completed';
   due_date: string | null;
   period: string | null;
   progress: number;
@@ -80,66 +80,8 @@ export function useManagerGoals() {
     enabled: !!user,
   });
 
-  const approveGoalMutation = useMutation({
-    mutationFn: async (goalId: string) => {
-      const { error } = await supabase
-        .from('goals')
-        .update({ status: 'approved' })
-        .eq('id', goalId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['manager-goals'] });
-      queryClient.invalidateQueries({ queryKey: ['goals'] });
-      toast({
-        title: 'Успешно',
-        description: 'Цель утверждена',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось утвердить цель',
-        variant: 'destructive',
-      });
-      console.error('Error approving goal:', error);
-    },
-  });
-
-  const rejectGoalMutation = useMutation({
-    mutationFn: async (goalId: string) => {
-      const { error } = await supabase
-        .from('goals')
-        .update({ status: 'draft' })
-        .eq('id', goalId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['manager-goals'] });
-      queryClient.invalidateQueries({ queryKey: ['goals'] });
-      toast({
-        title: 'Успешно',
-        description: 'Цель отправлена на доработку',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось отклонить цель',
-        variant: 'destructive',
-      });
-      console.error('Error rejecting goal:', error);
-    },
-  });
-
   return {
     goals,
     isLoading,
-    approveGoal: approveGoalMutation.mutate,
-    rejectGoal: rejectGoalMutation.mutate,
-    isApproving: approveGoalMutation.isPending,
-    isRejecting: rejectGoalMutation.isPending,
   };
 }

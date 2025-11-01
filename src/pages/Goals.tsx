@@ -82,7 +82,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
   }
 
   const isDraft = status === 'draft';
-  const canEditTasks = status === 'draft' || status === 'approved';
+  const canEditTasks = status === 'draft';
 
   return (
     <div className="space-y-2">
@@ -138,7 +138,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
   );
 };
 
-type GoalStatus = 'draft' | 'on_review' | 'approved' | 'completed';
+type GoalStatus = 'draft' | 'completed';
 
 export default function Goals() {
   const { goals, isLoading, createGoal, updateGoal, deleteGoal, isCreating, isUpdating } = useGoals();
@@ -158,8 +158,6 @@ export default function Goals() {
 
   const statusConfig = {
     draft: { label: "Черновик", variant: "secondary" as const, icon: FileEdit },
-    on_review: { label: "На проверке", variant: "default" as const, icon: Clock },
-    approved: { label: "Утверждена", variant: "outline" as const, icon: CheckCircle2 },
     completed: { label: "Завершена", variant: "outline" as const, icon: Archive },
   };
 
@@ -168,8 +166,6 @@ export default function Goals() {
   const statusCounts = {
     all: goals.length,
     draft: goals.filter((g) => g.status === "draft").length,
-    on_review: goals.filter((g) => g.status === "on_review").length,
-    approved: goals.filter((g) => g.status === "approved").length,
     completed: goals.filter((g) => g.status === "completed").length,
   };
 
@@ -224,7 +220,7 @@ export default function Goals() {
         description: formData.description,
         due_date: formData.deadline || null,
         period: formData.period || null,
-        status: 'on_review',
+        status: 'draft',
       });
     } else {
       createGoal({
@@ -232,7 +228,7 @@ export default function Goals() {
         description: formData.description,
         due_date: formData.deadline || null,
         period: formData.period || null,
-        status: 'on_review',
+        status: 'draft',
       });
     }
 
@@ -409,18 +405,12 @@ export default function Goals() {
         </Card>
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)} className="mb-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="all">
               Все ({statusCounts.all})
             </TabsTrigger>
             <TabsTrigger value="draft">
               Черновики ({statusCounts.draft})
-            </TabsTrigger>
-            <TabsTrigger value="on_review">
-              На проверке ({statusCounts.on_review})
-            </TabsTrigger>
-            <TabsTrigger value="approved">
-              Утверждены ({statusCounts.approved})
             </TabsTrigger>
             <TabsTrigger value="completed">
               Завершены ({statusCounts.completed})
@@ -497,7 +487,7 @@ export default function Goals() {
                           <span className={cn("font-bold", getProgressColor(goal.progress))}>
                             {goal.progress}%
                           </span>
-                          {(goal.status === 'approved' || goal.status === 'draft') && editingProgress !== goal.id && (
+                          {goal.status === 'draft' && editingProgress !== goal.id && (
                             <Button
                               variant="ghost"
                               size="sm"

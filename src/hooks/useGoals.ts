@@ -9,7 +9,7 @@ export interface Goal {
   description: string | null;
   due_date: string | null;
   period: string | null;
-  status: 'draft' | 'on_review' | 'approved' | 'completed';
+  status: 'draft' | 'completed';
   progress: number;
   created_at: string;
   updated_at: string;
