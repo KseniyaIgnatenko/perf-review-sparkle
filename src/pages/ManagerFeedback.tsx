@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { MessageSquare, ArrowLeft } from "lucide-react";
+import { MessageSquare, ArrowLeft, Users, Target } from "lucide-react";
 import { useManagerFeedback } from "@/hooks/useManagerFeedback";
 import { useProfile } from "@/hooks/useProfiles";
+import { useEmployeePeerReviews } from "@/hooks/useEmployeePeerReviews";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ManagerFeedback() {
   const [searchParams] = useSearchParams();
@@ -18,10 +22,39 @@ export default function ManagerFeedback() {
   const navigate = useNavigate();
   
   const [totalScore, setTotalScore] = useState<string>("");
+  const [strengthsFeedback, setStrengthsFeedback] = useState("");
+  const [improvementFeedback, setImprovementFeedback] = useState("");
   const [comment, setComment] = useState("");
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   
   const { submitFeedback, isSubmitting } = useManagerFeedback();
   const { profile, isLoading: profileLoading } = useProfile();
+  const { peerReviews, isLoading: reviewsLoading } = useEmployeePeerReviews(employeeId);
+  
+  // Fetch employee's goals
+  const { data: employeeGoals = [], isLoading: goalsLoading } = useQuery({
+    queryKey: ['employee-goals', employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', employeeId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!employeeId,
+  });
+
+  // Set default goal if only one exists
+  useEffect(() => {
+    if (employeeGoals.length === 1) {
+      setSelectedGoalId(employeeGoals[0].id);
+    }
+  }, [employeeGoals]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +67,10 @@ export default function ManagerFeedback() {
       {
         employeeId,
         totalScore: parseFloat(totalScore),
+        strengthsFeedback,
+        improvementFeedback,
         comment,
+        goalId: selectedGoalId || undefined,
       },
       {
         onSuccess: () => {
@@ -44,7 +80,15 @@ export default function ManagerFeedback() {
     );
   };
 
-  if (profileLoading) {
+  const getRatingLabel = (score: number) => {
+    if (score >= 0 && score <= 2) return "Нет результата";
+    if (score >= 3 && score <= 5) return "Низкий результат";
+    if (score >= 6 && score <= 8) return "Хороший результат";
+    if (score >= 9 && score <= 10) return "Сверхрезультат";
+    return "";
+  };
+
+  if (profileLoading || reviewsLoading || goalsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
@@ -79,7 +123,7 @@ export default function ManagerFeedback() {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Button 
           variant="ghost" 
           className="mb-6 gap-2" 
@@ -89,76 +133,227 @@ export default function ManagerFeedback() {
           Назад к панели менеджера
         </Button>
 
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <MessageSquare className="w-6 h-6 text-primary" />
-              Оценка сотрудника
-            </CardTitle>
-            <p className="text-muted-foreground mt-2">
-              Оценка для: <span className="font-semibold">{employeeName || 'Сотрудник'}</span>
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="totalScore">
-                  Итоговая оценка <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="totalScore"
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.1"
-                  value={totalScore}
-                  onChange={(e) => setTotalScore(e.target.value)}
-                  placeholder="Введите оценку от 0 до 10"
-                  required
-                  className="text-lg"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Оценка должна быть от 0 до 10
-                </p>
-              </div>
+        <div className="space-y-6">
+          {/* Preamble */}
+          <Card className="shadow-card border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <MessageSquare className="w-6 h-6 text-primary" />
+                Оценка сотрудника: {employeeName || 'Сотрудник'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Alert>
+                <AlertDescription className="text-base leading-relaxed">
+                  <p className="font-semibold mb-3">Преамбула:</p>
+                  <p className="mb-3">
+                    Твой сотрудник работал(-а) над задачей в течение полугода, по результатам выполнения которой респонденты делились обратной связью.
+                  </p>
+                  <ol className="list-decimal list-inside space-y-2 ml-2">
+                    <li>Ознакомься с обратной связью от респондентов</li>
+                    <li>Сформируй общую обратную связь, которая содержит в себе ОС респондентов и твою личную обратную связь</li>
+                    <li>Поделись обратной связью по формату, указанному ниже</li>
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="comment">
-                  Комментарий
-                </Label>
-                <Textarea
-                  id="comment"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Опишите сильные стороны, области для развития и общие рекомендации..."
-                  rows={8}
-                  className="resize-none"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Дайте развернутую обратную связь сотруднику
-                </p>
-              </div>
+          {/* Employee's Goals */}
+          {employeeGoals.length > 0 && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  Цели сотрудника
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {employeeGoals.map((goal) => (
+                  <div 
+                    key={goal.id} 
+                    className={`p-4 rounded-lg border transition-colors ${
+                      selectedGoalId === goal.id 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border bg-card'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="font-semibold mb-1">{goal.title}</h4>
+                        {goal.description && (
+                          <p className="text-sm text-muted-foreground">{goal.description}</p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selectedGoalId === goal.id ? "default" : "outline"}
+                        onClick={() => setSelectedGoalId(goal.id)}
+                      >
+                        {selectedGoalId === goal.id ? "Выбрано" : "Выбрать"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/manager")}
-                  className="flex-1"
-                >
-                  Отмена
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !totalScore}
-                  className="flex-1"
-                >
-                  {isSubmitting ? "Сохранение..." : "Сохранить оценку"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          {/* Peer Reviews */}
+          {peerReviews.length > 0 && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Обратная связь от коллег
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {peerReviews.map((review) => (
+                  <div key={review.id} className="p-4 border rounded-lg bg-card space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold">
+                        {review.reviewer?.full_name || 'Аноним'}
+                      </p>
+                      <div className="flex gap-2 text-sm">
+                        {review.quality_score && (
+                          <span className="px-2 py-1 bg-primary/10 rounded">
+                            Качество: {review.quality_score}/10
+                          </span>
+                        )}
+                        {review.collaboration_score && (
+                          <span className="px-2 py-1 bg-primary/10 rounded">
+                            Сотрудничество: {review.collaboration_score}/10
+                          </span>
+                        )}
+                        {review.communication_score && (
+                          <span className="px-2 py-1 bg-primary/10 rounded">
+                            Коммуникация: {review.communication_score}/10
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {review.comment && (
+                      <p className="text-muted-foreground">{review.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Feedback Form */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Твоя обратная связь</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="strengthsFeedback" className="text-base">
+                    Вопросы 2-3: Какие личные качества помогли сотруднику достичь результата, оценка личного вклада
+                  </Label>
+                  <Textarea
+                    id="strengthsFeedback"
+                    value={strengthsFeedback}
+                    onChange={(e) => setStrengthsFeedback(e.target.value)}
+                    placeholder='Например: "При разборе инцидента Вася предложил улучшение такое-то и реализовал доработку, это помогло команде избежать ошибок в коде. Коллеги по задаче также отмечают..."'
+                    rows={6}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="improvementFeedback" className="text-base">
+                    Вопрос 5: Что ты порекомендуешь улучшить сотруднику в следующем цикле
+                  </Label>
+                  <Textarea
+                    id="improvementFeedback"
+                    value={improvementFeedback}
+                    onChange={(e) => setImprovementFeedback(e.target.value)}
+                    placeholder='Например: "Вася - ответственный и проактивный, это отмечают все коллеги. Однако неоднократно коллеги упоминают о сдаче задач позже срока. Предлагаю это проработать..."'
+                    rows={6}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="totalScore" className="text-base">
+                    Вопрос 6: Общий рейтинг <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="totalScore"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={totalScore}
+                    onChange={(e) => setTotalScore(e.target.value)}
+                    placeholder="Введите оценку от 0 до 10"
+                    required
+                    className="text-lg"
+                  />
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p className="font-medium">Шкала рейтинга:</p>
+                    <ul className="list-disc list-inside ml-2 space-y-1">
+                      <li>0-2 - Нет результата</li>
+                      <li>3-5 - Низкий результат</li>
+                      <li>6-8 - Хороший результат</li>
+                      <li>9-10 - Сверхрезультат</li>
+                    </ul>
+                    {totalScore && (
+                      <p className="font-semibold text-primary mt-2">
+                        Выбранная оценка: {getRatingLabel(parseFloat(totalScore))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="comment" className="text-base">
+                    Общая обратная связь (опционально)
+                  </Label>
+                  <Textarea
+                    id="comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Дополнительные комментарии и общие рекомендации..."
+                    rows={4}
+                    className="resize-none"
+                  />
+                </div>
+
+                <Alert>
+                  <AlertDescription>
+                    <p className="font-semibold mb-2">Что делать дальше:</p>
+                    <p>
+                      26 июня обсудим алгоритм подведения итогов в формате 1:1. На ближайшем 1:1 вместе проговорите обратную связь и запланируйте шаги, как можно улучшить свои зоны.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/manager")}
+                    className="flex-1"
+                  >
+                    Отмена
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !totalScore}
+                    className="flex-1"
+                  >
+                    {isSubmitting ? "Сохранение..." : "Сохранить оценку"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );

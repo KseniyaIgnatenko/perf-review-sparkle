@@ -156,8 +156,11 @@ export type Database = {
           comment: string | null
           created_at: string | null
           employee_id: string
+          goal_id: string | null
           id: string
+          improvement_feedback: string | null
           manager_id: string
+          strengths_feedback: string | null
           total_score: number | null
           updated_at: string | null
         }
@@ -165,8 +168,11 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           employee_id: string
+          goal_id?: string | null
           id?: string
+          improvement_feedback?: string | null
           manager_id: string
+          strengths_feedback?: string | null
           total_score?: number | null
           updated_at?: string | null
         }
@@ -174,12 +180,23 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           employee_id?: string
+          goal_id?: string | null
           id?: string
+          improvement_feedback?: string | null
           manager_id?: string
+          strengths_feedback?: string | null
           total_score?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "manager_feedbacks_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {

@@ -9,6 +9,9 @@ export interface ManagerFeedback {
   manager_id: string;
   total_score: number | null;
   comment: string | null;
+  strengths_feedback: string | null;
+  improvement_feedback: string | null;
+  goal_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,11 +46,17 @@ export function useManagerFeedback() {
     mutationFn: async ({ 
       employeeId, 
       totalScore, 
-      comment 
+      comment,
+      strengthsFeedback,
+      improvementFeedback,
+      goalId
     }: { 
       employeeId: string; 
       totalScore: number; 
-      comment: string;
+      comment?: string;
+      strengthsFeedback?: string;
+      improvementFeedback?: string;
+      goalId?: string;
     }) => {
       if (!user) throw new Error('User not authenticated');
 
@@ -66,6 +75,9 @@ export function useManagerFeedback() {
           .update({
             total_score: totalScore,
             comment: comment,
+            strengths_feedback: strengthsFeedback,
+            improvement_feedback: improvementFeedback,
+            goal_id: goalId,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
@@ -80,6 +92,9 @@ export function useManagerFeedback() {
             manager_id: user.id,
             total_score: totalScore,
             comment: comment,
+            strengths_feedback: strengthsFeedback,
+            improvement_feedback: improvementFeedback,
+            goal_id: goalId,
           });
 
         if (error) throw error;
