@@ -367,16 +367,16 @@ export default function PeerReview() {
                               </Badge>
                             )}
                           </CardTitle>
-                          <CardDescription className="mt-1">
+                          <CardDescription className="mt-1 space-y-1">
                             {review.reviewer?.position?.name && (
-                              <span className="text-sm text-muted-foreground">
+                              <div className="text-sm text-muted-foreground">
                                 {review.reviewer.position.name}
-                              </span>
+                              </div>
                             )}
                             {review.status === 'submitted' && review.score && (
-                              <span className={review.reviewer?.position?.name ? " • " : ""}>
+                              <div className="text-sm">
                                 Оценка: <span className="font-semibold text-primary">{review.score.toFixed(1)}/10</span>
-                              </span>
+                              </div>
                             )}
                           </CardDescription>
                         </div>

@@ -71,7 +71,7 @@ export default function Dashboard() {
   // Динамический расчет этапов цикла оценки
   const hasApprovedGoals = approvedGoals.length > 0;
   const hasSelfAssessment = !!completedAssessment;
-  const hasCompletedPeerReviews = reviewsToWrite.every(r => r.status === 'submitted');
+  const hasCompletedPeerReviews = reviewsToWrite.length > 0 && reviewsToWrite.every(r => r.status === 'submitted');
   const hasManagerFeedback = !!managerFeedback;
 
   type StageStatus = "not-started" | "in-progress" | "completed";
