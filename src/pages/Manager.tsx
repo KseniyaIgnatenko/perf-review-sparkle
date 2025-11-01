@@ -1,14 +1,13 @@
-import { Navigation } from "@/components/Navigation";
+import { ManagerLayout } from "@/components/ManagerLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ClipboardCheck, TrendingUp, Users, AlertCircle } from "lucide-react";
+import { TrendingUp, Users, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useTeamMembers } from "@/hooks/useManager";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 export default function Manager() {
   const { teamMembers, isLoading } = useTeamMembers();
@@ -31,9 +30,8 @@ export default function Manager() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8">
+      <ManagerLayout>
+        <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-12 w-64 mb-8" />
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <Skeleton className="h-32" />
@@ -41,8 +39,8 @@ export default function Manager() {
             <Skeleton className="h-32" />
           </div>
           <Skeleton className="h-64" />
-        </main>
-      </div>
+        </div>
+      </ManagerLayout>
     );
   }
 
@@ -50,13 +48,11 @@ export default function Manager() {
   const inReviewCount = teamMembers.filter((e) => e.status === "in-review").length;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="container mx-auto px-4 py-8">
+    <ManagerLayout>
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="mb-2 flex items-center gap-2">
-            <ClipboardCheck className="w-8 h-8 text-primary" />
-            Панель менеджера
+          <h1 className="text-3xl font-bold mb-2">
+            Обзор команды
           </h1>
           <p className="text-muted-foreground text-lg">
             Управление оценкой и развитием вашей команды
@@ -255,7 +251,7 @@ export default function Manager() {
             </TabsContent>
           ))}
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </ManagerLayout>
   );
 }
