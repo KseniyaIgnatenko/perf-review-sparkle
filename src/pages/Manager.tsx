@@ -4,47 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ClipboardCheck, TrendingUp, Users, AlertCircle, CheckCircle, XCircle, FileText } from "lucide-react";
+import { ClipboardCheck, TrendingUp, Users, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useTeamMembers } from "@/hooks/useManager";
-import { useManagerGoals } from "@/hooks/useManagerGoals";
-import { useGoalTasks } from "@/hooks/useGoals";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-
-const GoalTasksView = ({ goalId }: { goalId: string }) => {
-  const { tasks, isLoading } = useGoalTasks(goalId);
-
-  if (isLoading) {
-    return <Skeleton className="h-16" />;
-  }
-
-  if (tasks.length === 0) {
-    return <p className="text-sm text-muted-foreground">Нет задач</p>;
-  }
-
-  return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium text-muted-foreground">Задачи:</p>
-      <div className="space-y-1">
-        {tasks.map((task) => (
-          <div key={task.id} className="flex items-center gap-2 text-sm">
-            <Checkbox checked={task.is_done} disabled />
-            <span className={cn(task.is_done && "line-through text-muted-foreground")}>
-              {task.title}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 export default function Manager() {
   const { teamMembers, isLoading } = useTeamMembers();
-  const { goals, isLoading: isLoadingGoals } = useManagerGoals();
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -81,11 +48,6 @@ export default function Manager() {
 
   const completedCount = teamMembers.filter((e) => e.status === "completed").length;
   const inReviewCount = teamMembers.filter((e) => e.status === "in-review").length;
-
-  const statusConfig = {
-    draft: { label: "Черновик", variant: "secondary" as const },
-    completed: { label: "Завершена", variant: "outline" as const },
-  };
 
   return (
     <div className="min-h-screen bg-background">
