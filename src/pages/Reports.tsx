@@ -294,6 +294,44 @@ export default function Reports() {
           )}
         </div>
 
+        {/* Manager Feedback */}
+        {feedback && (
+          <Card className="shadow-card border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Оценка руководителя
+              </CardTitle>
+              <CardDescription>
+                Обратная связь от вашего непосредственного руководителя
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-5 rounded-lg bg-gradient-subtle border border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">Итоговая оценка:</span>
+                    <span className="text-3xl font-bold text-primary">
+                      {feedback.total_score?.toFixed(1) || '-'}/10
+                    </span>
+                  </div>
+                  {feedback.comment && (
+                    <div className="pt-3 border-t border-border">
+                      <p className="text-sm text-muted-foreground mb-1">Комментарий:</p>
+                      <p className="text-sm">{feedback.comment}</p>
+                    </div>
+                  )}
+                  <div className="pt-3 border-t border-border mt-3">
+                    <p className="text-xs text-muted-foreground">
+                      Обновлено: {new Date(feedback.updated_at).toLocaleDateString('ru-RU')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Development Recommendations */}
         <Card className="shadow-card">
           <CardHeader>

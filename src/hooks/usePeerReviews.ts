@@ -18,9 +18,15 @@ export interface PeerReview {
   updated_at: string;
   reviewer?: {
     full_name: string;
+    position?: {
+      name: string;
+    };
   };
   reviewee?: {
     full_name: string;
+    position?: {
+      name: string;
+    };
   };
   goal?: {
     title: string;
@@ -40,7 +46,10 @@ export function usePeerReviews() {
         .from('peer_reviews')
         .select(`
           *,
-          reviewee:profiles!peer_reviews_reviewee_id_fkey(full_name),
+          reviewee:profiles!peer_reviews_reviewee_id_fkey(
+            full_name,
+            position:positions(name)
+          ),
           goal:goals(title)
         `)
         .eq('reviewer_id', user.id)
@@ -61,7 +70,10 @@ export function usePeerReviews() {
         .from('peer_reviews')
         .select(`
           *,
-          reviewer:profiles!peer_reviews_reviewer_id_fkey(full_name)
+          reviewer:profiles!peer_reviews_reviewer_id_fkey(
+            full_name,
+            position:positions(name)
+          )
         `)
         .eq('reviewee_id', user.id)
         .eq('status', 'submitted')

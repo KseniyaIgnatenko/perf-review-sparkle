@@ -367,11 +367,18 @@ export default function PeerReview() {
                               </Badge>
                             )}
                           </CardTitle>
-                          {review.status === 'submitted' && review.score && (
-                            <CardDescription className="mt-1">
-                              Оценка: <span className="font-semibold text-primary">{review.score.toFixed(1)}/10</span>
-                            </CardDescription>
-                          )}
+                          <CardDescription className="mt-1">
+                            {review.reviewer?.position?.name && (
+                              <span className="text-sm text-muted-foreground">
+                                {review.reviewer.position.name}
+                              </span>
+                            )}
+                            {review.status === 'submitted' && review.score && (
+                              <span className={review.reviewer?.position?.name ? " • " : ""}>
+                                Оценка: <span className="font-semibold text-primary">{review.score.toFixed(1)}/10</span>
+                              </span>
+                            )}
+                          </CardDescription>
                         </div>
                         <Badge>
                           {new Date(review.created_at).toLocaleDateString()}
