@@ -71,7 +71,7 @@ export default function Dashboard() {
   // Динамический расчет этапов цикла оценки
   const hasApprovedGoals = approvedGoals.length > 0;
   const hasSelfAssessment = !!completedAssessment;
-  const hasCompletedPeerReviews = reviewsToWrite.length > 0 && reviewsToWrite.every(r => r.status === 'submitted');
+  const hasReceivedPeerReviews = completedReceivedReviews.length > 0;
   const hasManagerFeedback = !!managerFeedback;
 
   type StageStatus = "not-started" | "in-progress" | "completed";
@@ -93,11 +93,11 @@ export default function Dashboard() {
     },
     { 
       label: "Оценка коллег", 
-      status: getStageStatus(hasCompletedPeerReviews, false, hasSelfAssessment)
+      status: getStageStatus(hasReceivedPeerReviews, false, hasSelfAssessment)
     },
     { 
       label: "Оценка руководителя", 
-      status: getStageStatus(hasManagerFeedback, false, hasCompletedPeerReviews)
+      status: getStageStatus(hasManagerFeedback, false, hasReceivedPeerReviews)
     },
   ];
 
