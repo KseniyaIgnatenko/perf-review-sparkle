@@ -2,14 +2,12 @@ import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Mail, Briefcase, Building2, Calendar, Shield } from "lucide-react";
+import { User, Mail, Briefcase, Building2, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfiles";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -143,47 +141,10 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Дата регистрации</p>
-                    <p className="font-medium">
-                      {profile?.created_at 
-                        ? format(new Date(profile.created_at), 'dd MMMM yyyy', { locale: ru })
-                        : '-'
-                      }
-                    </p>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle>Статус аккаунта</CardTitle>
-              <CardDescription>
-                Информация о состоянии вашего профиля
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Активность</p>
-                  <p className="text-sm text-muted-foreground">
-                    Ваш аккаунт {profile?.is_active ? 'активен' : 'неактивен'}
-                  </p>
-                </div>
-                <Badge variant={profile?.is_active ? 'default' : 'secondary'}>
-                  {profile?.is_active ? 'Активен' : 'Неактивен'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
