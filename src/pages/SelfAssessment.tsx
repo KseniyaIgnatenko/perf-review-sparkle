@@ -48,19 +48,15 @@ export default function SelfAssessment() {
   const [openAccordion, setOpenAccordion] = useState<string>("");
   const { toast } = useToast();
 
-  // Загружаем данные если есть существующая оценка для выбранной задачи
+  // Загружаем существующую самооценку для выбранной задачи
   useEffect(() => {
     if (selectedTask && assessments) {
       const existingAssessment = assessments.find(a => a.task_id === selectedTask);
       if (existingAssessment) {
         setCurrentAssessmentId(existingAssessment.id);
       } else {
-        // Создаем новую оценку
-        createAssessment({ task_id: selectedTask, goal_id: selectedGoal }, {
-          onSuccess: (data) => {
-            setCurrentAssessmentId(data.id);
-          }
-        });
+        // Просто сбрасываем ID, самооценка будет создана при первом сохранении
+        setCurrentAssessmentId(null);
       }
     }
   }, [selectedTask, assessments]);

@@ -45,6 +45,21 @@ export function useSelfAssessments() {
   const createAssessment = useMutation({
     mutationFn: async (assessment: { task_id: string; goal_id?: string }) => {
       if (!user) throw new Error('Not authenticated');
+      
+      // Проверяем существующую самооценку для этой задачи
+      const { data: existing } = await supabase
+        .from('self_assessments')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('task_id', assessment.task_id)
+        .maybeSingle();
+      
+      // Если уже есть, возвращаем её
+      if (existing) {
+        return existing;
+      }
+      
+      // Иначе создаем новую
       const { data, error } = await supabase
         .from('self_assessments')
         .insert({ 
@@ -139,9 +154,9 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      // Invalidate the specific assessment answers query to refresh UI immediately
-      queryClient.invalidateQueries({ queryKey: ['assessment-answers', assessmentId] });
+    onSuccess: (data) => {
+      // Invalidate using the assessment_id from the saved answer
+      queryClient.invalidateQueries({ queryKey: ['assessment-answers', data.self_assessment_id] });
     },
   });
 
