@@ -8,8 +8,10 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 export default function TestSetup() {
   const [loadingEmployee, setLoadingEmployee] = useState(false);
   const [loadingHR, setLoadingHR] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
   const [employeeResult, setEmployeeResult] = useState<any>(null);
   const [hrResult, setHRResult] = useState<any>(null);
+  const [passwordResult, setPasswordResult] = useState<any>(null);
 
   const createTestEmployee = async () => {
     setLoadingEmployee(true);
@@ -52,6 +54,31 @@ export default function TestSetup() {
       setHRResult({ success: false, error: error.message });
     } finally {
       setLoadingHR(false);
+    }
+  };
+
+  const updatePassword = async () => {
+    setLoadingPassword(true);
+    setPasswordResult(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: {
+          email: 'employee2@wink.ru',
+          newPassword: 'Employee2123!'
+        }
+      });
+
+      if (error) throw error;
+
+      setPasswordResult(data);
+      toast.success('Пароль успешно изменен!');
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error('Ошибка при изменении пароля');
+      setPasswordResult({ success: false, error: error.message });
+    } finally {
+      setLoadingPassword(false);
     }
   };
 
@@ -116,8 +143,32 @@ export default function TestSetup() {
                 Создать HR пользователя
               </Button>
 
-              {hrResult && (
+            {hrResult && (
                 <ResultCard result={hrResult} />
+              )}
+            </div>
+
+            {/* Изменение пароля */}
+            <div className="space-y-4 p-4 border rounded-lg">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Изменить пароль</h3>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Email: employee2@wink.ru</li>
+                  <li>Новый пароль: Employee2123!</li>
+                </ul>
+              </div>
+
+              <Button 
+                onClick={updatePassword} 
+                disabled={loadingPassword}
+                className="w-full"
+              >
+                {loadingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Изменить пароль
+              </Button>
+
+              {passwordResult && (
+                <ResultCard result={passwordResult} />
               )}
             </div>
 
