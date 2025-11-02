@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Save, Send, CheckCircle2, FileText, Calendar, ListTodo, Clock, FileEdit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +21,7 @@ export default function SelfAssessment() {
   const { assessments, createAssessment, updateAssessment } = useSelfAssessments();
   
   const [selectedGoal, setSelectedGoal] = useState("");
+  const [selectedTask, setSelectedTask] = useState("");
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   
   const { answers, saveAnswer } = useSelfAssessmentAnswers(currentAssessmentId);
@@ -38,22 +38,22 @@ export default function SelfAssessment() {
   const [openAccordion, setOpenAccordion] = useState<string>("");
   const { toast } = useToast();
 
-  // Загружаем данные если есть существующая оценка
+  // Загружаем данные если есть существующая оценка для выбранной задачи
   useEffect(() => {
-    if (selectedGoal && assessments) {
-      const existingAssessment = assessments.find(a => a.goal_id === selectedGoal);
+    if (selectedTask && assessments) {
+      const existingAssessment = assessments.find(a => a.task_id === selectedTask);
       if (existingAssessment) {
         setCurrentAssessmentId(existingAssessment.id);
       } else {
         // Создаем новую оценку
-        createAssessment({ goal_id: selectedGoal }, {
+        createAssessment({ task_id: selectedTask, goal_id: selectedGoal }, {
           onSuccess: (data) => {
             setCurrentAssessmentId(data.id);
           }
         });
       }
     }
-  }, [selectedGoal, assessments]);
+  }, [selectedTask, assessments]);
 
   // Загружаем ответы
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function SelfAssessment() {
   };
 
   const handleSubmit = () => {
-    if (!selectedGoal || !formData.results.trim() || !formData.contribution.trim()) {
+    if (!selectedTask || !formData.results.trim() || !formData.contribution.trim()) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -190,17 +190,18 @@ export default function SelfAssessment() {
     );
   }
 
-  // Доступны все цели
-  const availableGoals = goals;
+  // Доступны все цели с завершенными задачами
+  const availableGoals = goals.filter(goal => goal.status !== 'draft');
   
-  // Получаем информацию о существующих самооценках
-  const goalsWithAssessments = availableGoals.map(goal => {
-    const assessment = assessments?.find(a => a.goal_id === goal.id);
+  // Получаем информацию о существующих самооценках по задачам
+  const currentGoal = availableGoals.find(g => g.id === selectedGoal);
+  const tasksWithAssessments = tasks?.map(task => {
+    const assessment = assessments?.find(a => a.task_id === task.id);
     return {
-      ...goal,
+      ...task,
       assessment,
     };
-  });
+  }) || [];
   
   // Проверяем статус текущей самооценки
   const currentAssessment = assessments?.find(a => a.id === currentAssessmentId);
@@ -223,8 +224,9 @@ export default function SelfAssessment() {
             <div className="space-y-3 text-sm">
               <p className="font-semibold text-foreground">💡 Как проводить самооценку:</p>
               <ul className="space-y-2 text-muted-foreground ml-4">
-                <li>• <strong>Выберите цель</strong> из списка ниже - доступны все утвержденные цели</li>
-                <li>• Заполните форму с вопросами о достижениях и развитии навыков</li>
+                <li>• <strong>Выберите цель</strong>, затем <strong>задачу</strong> из списка ниже</li>
+                <li>• Самооценка проводится в разрезе каждой задачи отдельно</li>
+                <li>• Заполните форму с вопросами о достижениях и развитии навыков по выбранной задаче</li>
                 <li>• Оцените свою работу по командной работе и удовлетворенности</li>
                 <li>• Можно сохранить черновик и вернуться позже или сразу отправить</li>
                 <li>• После отправки самооценка будет учтена при общей оценке эффективности</li>
@@ -233,8 +235,8 @@ export default function SelfAssessment() {
           </CardContent>
         </Card>
 
-        {/* Список целей с самооценками */}
-        {goalsWithAssessments.length === 0 ? (
+        {/* Выбор цели */}
+        {availableGoals.length === 0 ? (
           <Card className="shadow-card">
             <CardContent className="p-12 text-center">
               <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -247,140 +249,144 @@ export default function SelfAssessment() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Выберите цель для оценки
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-2">
-                Нажмите на цель, чтобы заполнить самооценку
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {goalsWithAssessments.map((goal) => {
-                  const isSelected = selectedGoal === goal.id;
-                  const isCompleted = goal.assessment?.status === 'submitted';
-                  const isDraft = goal.assessment?.status === 'draft';
-                  
-                  return (
-                    <div
-                      key={goal.id}
-                      className={cn(
-                        "p-4 rounded-lg border-2 transition-all cursor-pointer",
-                        isSelected && "border-primary bg-primary/5 shadow-md",
-                        !isSelected && "border-border hover:border-primary/50 hover:shadow-sm"
-                      )}
-                      onClick={() => setSelectedGoal(goal.id)}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            {isCompleted && <CheckCircle2 className="w-5 h-5 text-success" />}
-                            <h3 className="font-semibold">{goal.title}</h3>
-                          </div>
-                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                            {goal.period && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                {goal.period}
-                              </span>
-                            )}
-                            {goal.due_date && (
-                              <span>
-                                до {format(new Date(goal.due_date), "d MMMM yyyy", { locale: ru })}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          {isCompleted ? (
-                            <>
-                              <Badge variant="default" className="gap-1">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Отправлено
-                              </Badge>
-                              {goal.assessment?.total_score && (
-                                <span className="text-sm font-semibold text-primary">
-                                  Балл: {goal.assessment.total_score}
-                                </span>
-                              )}
-                            </>
-                          ) : isDraft ? (
-                            <Badge variant="secondary" className="gap-1">
-                              <FileEdit className="w-3 h-3" />
-                              Черновик
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="gap-1">
-                              <Clock className="w-3 h-3" />
-                              Не заполнено
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <div className="mt-3 pt-3 border-t text-sm text-primary font-medium">
-                          👇 Заполните форму ниже
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {selectedGoal && (
           <>
-            {/* Информация о выбранной цели */}
-            <Card className="shadow-card bg-muted/30">
+            <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <ListTodo className="w-5 h-5" />
-                  Задачи по цели
+                  <FileText className="w-5 h-5" />
+                  Шаг 1: Выберите цель
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {tasks && tasks.length > 0 ? (
-                  <div className="space-y-2">
-                    {tasks.map((task) => (
+                <div className="space-y-3">
+                  {availableGoals.map((goal) => {
+                    const isSelected = selectedGoal === goal.id;
+                    
+                    return (
                       <div
-                        key={task.id}
-                        className="flex items-center gap-2 p-2 rounded border bg-background"
+                        key={goal.id}
+                        className={cn(
+                          "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                          isSelected && "border-primary bg-primary/5 shadow-md",
+                          !isSelected && "border-border hover:border-primary/50 hover:shadow-sm"
+                        )}
+                        onClick={() => {
+                          setSelectedGoal(goal.id);
+                          setSelectedTask("");
+                          setCurrentAssessmentId(null);
+                        }}
                       >
-                        <CheckCircle2
-                          className={cn(
-                            "w-4 h-4",
-                            task.is_done ? "text-success" : "text-muted-foreground"
-                          )}
-                        />
-                        <span
-                          className={cn(
-                            "text-sm flex-1",
-                            task.is_done && "line-through text-muted-foreground"
-                          )}
-                        >
-                          {task.title}
-                        </span>
-                        {task.is_done && (
-                          <Badge variant="outline" className="text-xs">
-                            Выполнено
-                          </Badge>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{goal.title}</h3>
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              {goal.period && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {goal.period}
+                                </span>
+                              )}
+                              {goal.due_date && (
+                                <span>
+                                  до {format(new Date(goal.due_date), "d MMMM yyyy", { locale: ru })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="mt-3 pt-3 border-t text-sm text-primary font-medium">
+                            👇 Выберите задачу ниже
+                          </div>
                         )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Нет задач для этой цели
-                  </p>
-                )}
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
 
+            {/* Выбор задачи */}
+            {selectedGoal && tasksWithAssessments.length > 0 && (
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ListTodo className="w-5 h-5" />
+                    Шаг 2: Выберите задачу для оценки
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Нажмите на задачу, чтобы заполнить самооценку
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {tasksWithAssessments.map((task) => {
+                      const isSelected = selectedTask === task.id;
+                      const isCompleted = task.assessment?.status === 'submitted';
+                      const isDraft = task.assessment?.status === 'draft';
+                      
+                      return (
+                        <div
+                          key={task.id}
+                          className={cn(
+                            "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                            isSelected && "border-primary bg-primary/5 shadow-md",
+                            !isSelected && "border-border hover:border-primary/50 hover:shadow-sm"
+                          )}
+                          onClick={() => setSelectedTask(task.id)}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                {task.is_done && <CheckCircle2 className="w-5 h-5 text-success" />}
+                                <h3 className="font-semibold">{task.title}</h3>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              {isCompleted ? (
+                                <>
+                                  <Badge variant="default" className="gap-1">
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    Отправлено
+                                  </Badge>
+                                  {task.assessment?.total_score && (
+                                    <span className="text-sm font-semibold text-primary">
+                                      Балл: {task.assessment.total_score}
+                                    </span>
+                                  )}
+                                </>
+                              ) : isDraft ? (
+                                <Badge variant="secondary" className="gap-1">
+                                  <FileEdit className="w-3 h-3" />
+                                  Черновик
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  Не заполнено
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {isSelected && (
+                            <div className="mt-3 pt-3 border-t text-sm text-primary font-medium">
+                              👇 Заполните форму ниже
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        {selectedTask && (
+          <>
             {/* Индикатор прогресса по шагам */}
             {!isSubmitted && (
               <Card className="shadow-card">
@@ -400,7 +406,7 @@ export default function SelfAssessment() {
                       <p className="font-semibold text-foreground">Самооценка отправлена</p>
                       <p className="text-sm text-muted-foreground mt-1">
                         Эта самооценка уже отправлена и недоступна для редактирования. 
-                        Итоговый балл: <span className="font-semibold text-primary">{currentAssessment?.total_score}</span>
+                        Выберите другую задачу для оценки.
                       </p>
                     </div>
                   </div>
@@ -408,200 +414,201 @@ export default function SelfAssessment() {
               </Card>
             )}
 
-            {/* Questions */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle>Вопросы для самооценки</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Accordion 
-                  type="single" 
-                  collapsible 
-                  className="w-full"
-                  value={openAccordion}
-                  onValueChange={setOpenAccordion}
-                >
-                  <AccordionItem value="results">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        {formData.results && <CheckCircle2 className="w-4 h-4 text-success" />}
-                        <span>1. Достижение результатов *</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Опишите, какие результаты были достигнуты по этой цели
-                      </p>
-                      <Textarea
-                        placeholder="Опишите ваши достижения..."
-                        value={formData.results}
-                        onChange={(e) => setFormData({ ...formData, results: e.target.value })}
-                        rows={4}
-                        disabled={isSubmitted}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
+            {/* Форма самооценки */}
+            {!isSubmitted && (
+              <Card className="shadow-card">
+                <CardHeader>
+                  <CardTitle>Анкета самооценки</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Заполните все разделы анкеты. Поля помеченные * обязательны для заполнения.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Accordion
+                    type="single"
+                    collapsible
+                    value={openAccordion}
+                    onValueChange={setOpenAccordion}
+                  >
+                    <AccordionItem value="results">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>1. Достигнутые результаты по задаче *</span>
+                          {formData.results && (
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Опишите, что вы сделали для выполнения этой задачи, какие результаты были достигнуты
+                        </p>
+                        <Textarea
+                          value={formData.results}
+                          onChange={(e) => setFormData({ ...formData, results: e.target.value })}
+                          placeholder="Опишите достигнутые результаты..."
+                          rows={6}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
 
-                  <AccordionItem value="contribution">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        {formData.contribution && <CheckCircle2 className="w-4 h-4 text-success" />}
-                        <span>2. Вклад в команду *</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Как ваша работа повлияла на команду и проект
-                      </p>
-                      <Textarea
-                        placeholder="Опишите ваш вклад..."
-                        value={formData.contribution}
-                        onChange={(e) => setFormData({ ...formData, contribution: e.target.value })}
-                        rows={4}
-                        disabled={isSubmitted}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
+                    <AccordionItem value="contribution">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>2. Вклад в команду *</span>
+                          {formData.contribution && (
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Расскажите, как ваша работа по этой задаче помогла команде, коллегам или проекту в целом
+                        </p>
+                        <Textarea
+                          value={formData.contribution}
+                          onChange={(e) => setFormData({ ...formData, contribution: e.target.value })}
+                          placeholder="Опишите ваш вклад..."
+                          rows={6}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
 
-                  <AccordionItem value="skills">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        {formData.skills && <CheckCircle2 className="w-4 h-4 text-success" />}
-                        <span>3. Развитие навыков</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Какие навыки вы развили в течение периода
-                      </p>
-                      <Textarea
-                        placeholder="Опишите развитые навыки..."
-                        value={formData.skills}
-                        onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                        rows={4}
-                        disabled={isSubmitted}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
+                    <AccordionItem value="skills">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>3. Развитие навыков</span>
+                          {formData.skills && (
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Какие новые навыки вы приобрели или развили в процессе выполнения этой задачи
+                        </p>
+                        <Textarea
+                          value={formData.skills}
+                          onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                          placeholder="Опишите развитые навыки..."
+                          rows={6}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
 
-                  <AccordionItem value="improvements">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        {formData.improvements && <CheckCircle2 className="w-4 h-4 text-success" />}
-                        <span>4. Области для улучшения</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Что можно улучшить в вашей работе
-                      </p>
-                      <Textarea
-                        placeholder="Опишите области для улучшения..."
-                        value={formData.improvements}
-                        onChange={(e) => setFormData({ ...formData, improvements: e.target.value })}
-                        rows={4}
-                        disabled={isSubmitted}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
+                    <AccordionItem value="improvements">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>4. Планы по улучшению</span>
+                          {formData.improvements && (
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-3 pt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Что вы планируете улучшить в следующем периоде на основе опыта выполнения этой задачи
+                        </p>
+                        <Textarea
+                          value={formData.improvements}
+                          onChange={(e) => setFormData({ ...formData, improvements: e.target.value })}
+                          placeholder="Опишите планы по улучшению..."
+                          rows={6}
+                        />
+                      </AccordionContent>
+                    </AccordionItem>
 
-                  <AccordionItem value="teamwork">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-success" />
-                        <span>5. Командная работа</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">
-                          Оцените вашу командную работу
-                        </span>
-                        <span className="text-2xl font-bold text-primary">
-                          {formData.teamworkScore}
-                        </span>
-                      </div>
-                      <Slider
-                        value={[formData.teamworkScore]}
-                        onValueChange={([value]) =>
-                          setFormData({ ...formData, teamworkScore: value })
-                        }
-                        min={1}
-                        max={10}
-                        step={1}
-                        disabled={isSubmitted}
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>1 - Требует улучшения</span>
-                        <span>10 - Отлично</span>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                    <AccordionItem value="teamwork">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>5. Командная работа</span>
+                          <CheckCircle2 className="w-5 h-5 text-success" />
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Оцените качество взаимодействия с коллегами при выполнении задачи
+                          </p>
+                          <div className="flex items-center gap-4">
+                            <Slider
+                              value={[formData.teamworkScore]}
+                              onValueChange={(value) =>
+                                setFormData({ ...formData, teamworkScore: value[0] })
+                              }
+                              min={0}
+                              max={10}
+                              step={1}
+                              className="flex-1"
+                            />
+                            <Badge variant="outline" className="min-w-[80px] justify-center">
+                              {formData.teamworkScore}/10
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {getScoreLabel(formData.teamworkScore)}
+                          </p>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
 
-                  <AccordionItem value="satisfaction">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-success" />
-                        <span>6. Удовлетворенность работой</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">
-                          Насколько вы удовлетворены своей работой
-                        </span>
-                        <span className="text-2xl font-bold text-primary">
-                          {formData.satisfactionScore}
-                        </span>
-                      </div>
-                      <Slider
-                        value={[formData.satisfactionScore]}
-                        onValueChange={([value]) =>
-                          setFormData({ ...formData, satisfactionScore: value })
-                        }
-                        min={1}
-                        max={10}
-                        step={1}
-                        disabled={isSubmitted}
-                      />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>1 - Не удовлетворен</span>
-                        <span>10 - Очень удовлетворен</span>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
+                    <AccordionItem value="satisfaction">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>6. Удовлетворенность работой</span>
+                          <CheckCircle2 className="w-5 h-5 text-success" />
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Насколько вы удовлетворены результатами работы над этой задачей
+                          </p>
+                          <div className="flex items-center gap-4">
+                            <Slider
+                              value={[formData.satisfactionScore]}
+                              onValueChange={(value) =>
+                                setFormData({ ...formData, satisfactionScore: value[0] })
+                              }
+                              min={0}
+                              max={10}
+                              step={1}
+                              className="flex-1"
+                            />
+                            <Badge variant="outline" className="min-w-[80px] justify-center">
+                              {formData.satisfactionScore}/10
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {getScoreLabel(formData.satisfactionScore)}
+                          </p>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
 
-            {/* Summary */}
-            <Card className="shadow-card border-primary">
-              <CardHeader>
-                <CardTitle>Итоговая оценка</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                  <span className="font-medium">Общий балл:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl font-bold text-primary">{totalScore}</span>
-                    <Badge variant="outline">{getScoreLabel(totalScore)}</Badge>
+                  <div className="flex items-center justify-between pt-6 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      Общий балл: <span className="font-semibold">{totalScore}/6</span>
+                    </div>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleSaveDraft}
+                        className="gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        Сохранить черновик
+                      </Button>
+                      <Button onClick={handleSubmit} className="gap-2">
+                        <Send className="w-4 h-4" />
+                        Отправить
+                      </Button>
+                    </div>
                   </div>
-                </div>
-
-                {!isSubmitted && (
-                  <div className="flex gap-3 justify-end">
-                    <Button variant="outline" className="gap-2" onClick={handleSaveDraft}>
-                      <Save className="w-4 h-4" />
-                      Сохранить черновик
-                    </Button>
-                    <Button className="gap-2" onClick={handleSubmit}>
-                      <Send className="w-4 h-4" />
-                      Отправить самооценку
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </main>

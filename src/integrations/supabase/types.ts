@@ -450,27 +450,30 @@ export type Database = {
       self_assessments: {
         Row: {
           created_at: string | null
-          goal_id: string
+          goal_id: string | null
           id: string
           status: Database["public"]["Enums"]["assessment_status"] | null
+          task_id: string | null
           total_score: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          goal_id: string
+          goal_id?: string | null
           id?: string
           status?: Database["public"]["Enums"]["assessment_status"] | null
+          task_id?: string | null
           total_score?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
-          goal_id?: string
+          goal_id?: string | null
           id?: string
           status?: Database["public"]["Enums"]["assessment_status"] | null
+          task_id?: string | null
           total_score?: number | null
           updated_at?: string | null
           user_id?: string
@@ -481,6 +484,13 @@ export type Database = {
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "self_assessments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "goal_tasks"
             referencedColumns: ["id"]
           },
         ]

@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 export interface SelfAssessment {
   id: string;
   user_id: string;
-  goal_id: string;
+  goal_id: string | null;
+  task_id: string | null;
   status: 'draft' | 'submitted' | 'reviewed';
   total_score: number | null;
   created_at: string;
@@ -42,13 +43,14 @@ export function useSelfAssessments() {
   });
 
   const createAssessment = useMutation({
-    mutationFn: async (assessment: { goal_id: string }) => {
+    mutationFn: async (assessment: { task_id: string; goal_id?: string }) => {
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('self_assessments')
         .insert({ 
           user_id: user.id, 
-          goal_id: assessment.goal_id,
+          task_id: assessment.task_id,
+          goal_id: assessment.goal_id || null,
           status: 'draft'
         })
         .select()
