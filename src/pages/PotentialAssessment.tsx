@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,12 +10,14 @@ import { Switch } from '@/components/ui/switch';
 import { useProfiles } from '@/hooks/useProfiles';
 import { usePotentialAssessments, calculateScores } from '@/hooks/usePotentialAssessments';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Navigation } from '@/components/Navigation';
 
 export default function PotentialAssessment() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { profiles } = useProfiles();
   const { createAssessment, updateAssessment } = usePotentialAssessments();
 
@@ -63,14 +66,25 @@ export default function PotentialAssessment() {
   const managers = profiles?.filter(p => p.role === 'manager' || p.role === 'hr') || [];
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">Оценка потенциала сотрудника</h1>
-        <p className="text-muted-foreground mt-2">
-          Данный раздел необходим для общей оценки потенциала сотрудника.
-          Две шкалы: потенциал-результативность
-        </p>
-      </div>
+    <>
+      <Navigation />
+      <div className="container mx-auto p-6 max-w-5xl">
+        <Button
+          variant="ghost"
+          className="mb-4"
+          onClick={() => navigate('/manager')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Назад к команде
+        </Button>
+
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Оценка потенциала сотрудника</h1>
+          <p className="text-muted-foreground mt-2">
+            Данный раздел необходим для общей оценки потенциала сотрудника.
+            Две шкалы: потенциал-результативность
+          </p>
+        </div>
 
       <Alert className="mb-6">
         <Info className="h-4 w-4" />
@@ -428,5 +442,6 @@ export default function PotentialAssessment() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }
