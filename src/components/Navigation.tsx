@@ -1,28 +1,39 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck, User } from "lucide-react";
+import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck, User, Building2, UserCircle } from "lucide-react";
 import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useManagerMode } from "@/contexts/ManagerModeContext";
 
 export const Navigation = () => {
   const location = useLocation();
   const { signOut } = useAuth();
-  const { hasRole, isManager, isHR } = useUserRoles();
+  const { hasRole, isManager } = useUserRoles();
+  const { mode, toggleMode } = useManagerMode();
 
   const navItems = [
-    { icon: Home, label: "Главная", path: "/dashboard", roles: ['employee', 'manager', 'hr', 'admin'] },
-    { icon: Target, label: "Мои цели", path: "/goals", roles: ['employee', 'manager', 'hr', 'admin'] },
-    { icon: ClipboardList, label: "Самооценка", path: "/self-assessment", roles: ['employee', 'manager', 'hr', 'admin'] },
-    { icon: Users, label: "Оценка коллег", path: "/peer-review", roles: ['employee', 'manager', 'hr', 'admin'] },
-    { icon: ClipboardCheck, label: "Панель менеджера", path: "/manager", roles: ['manager'] },
-    { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'] },
-    { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'] },
+    { icon: Home, label: "Главная", path: "/dashboard", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
+    { icon: Target, label: "Мои цели", path: "/goals", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
+    { icon: ClipboardList, label: "Самооценка", path: "/self-assessment", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
+    { icon: Users, label: "Оценка коллег", path: "/peer-review", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
+    { icon: ClipboardCheck, label: "Моя команда", path: "/manager", roles: ['manager'], visibleInManagerMode: true },
+    { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'], visibleInManagerMode: true },
+    { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
   ];
 
   const visibleNavItems = navItems.filter(item => {
-    return item.roles.some(role => hasRole(role as any));
+    const hasRequiredRole = item.roles.some(role => hasRole(role as any));
+    
+    // Если менеджер в режиме менеджера, показываем только менеджерские пункты
+    if (isManager && mode === 'manager') {
+      return hasRequiredRole && item.visibleInManagerMode;
+    }
+    
+    // В режиме сотрудника показываем только пункты для сотрудников
+    return hasRequiredRole && !item.visibleInManagerMode;
   });
   
   const handleLogout = () => signOut();
@@ -62,6 +73,27 @@ export const Navigation = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {isManager && (
+              <Button
+                variant={mode === 'manager' ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleMode}
+                className="gap-2"
+              >
+                {mode === 'manager' ? (
+                  <>
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden md:inline">Режим менеджера</span>
+                  </>
+                ) : (
+                  <>
+                    <UserCircle className="w-4 h-4" />
+                    <span className="hidden md:inline">Режим сотрудника</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
             <Link to="/profile">
               <Button 
                 variant="ghost" 

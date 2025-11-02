@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ManagerLayout } from "@/components/ManagerLayout";
+import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,19 +90,21 @@ export default function ManagerFeedback() {
 
   if (profileLoading || reviewsLoading || goalsLoading) {
     return (
-      <ManagerLayout>
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
           <Skeleton className="h-12 w-64 mb-8" />
           <Skeleton className="h-96" />
-        </div>
-      </ManagerLayout>
+        </main>
+      </div>
     );
   }
 
   if (!employeeId) {
     return (
-      <ManagerLayout>
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
           <Card>
             <CardContent className="p-12 text-center">
               <p className="text-lg font-semibold mb-2">Ошибка</p>
@@ -112,14 +114,16 @@ export default function ManagerFeedback() {
               </Button>
             </CardContent>
           </Card>
-        </div>
-      </ManagerLayout>
+        </main>
+      </div>
     );
   }
 
   return (
-    <ManagerLayout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Button 
           variant="ghost" 
           className="mb-6 gap-2" 
@@ -350,7 +354,7 @@ export default function ManagerFeedback() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </ManagerLayout>
+      </main>
+    </div>
   );
 }

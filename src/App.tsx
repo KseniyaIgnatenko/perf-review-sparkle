@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ManagerModeProvider } from "@/contexts/ManagerModeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -28,21 +29,23 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-            <Route path="/self-assessment" element={<ProtectedRoute><SelfAssessment /></ProtectedRoute>} />
-            <Route path="/peer-review" element={<ProtectedRoute><PeerReview /></ProtectedRoute>} />
-            <Route path="/manager" element={<ProtectedRoute><Manager /></ProtectedRoute>} />
-            <Route path="/manager/feedback" element={<ProtectedRoute><ManagerFeedback /></ProtectedRoute>} />
-            <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/test-setup" element={<TestSetup />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <ManagerModeProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
+              <Route path="/self-assessment" element={<ProtectedRoute><SelfAssessment /></ProtectedRoute>} />
+              <Route path="/peer-review" element={<ProtectedRoute><PeerReview /></ProtectedRoute>} />
+              <Route path="/manager" element={<ProtectedRoute><Manager /></ProtectedRoute>} />
+              <Route path="/manager/feedback" element={<ProtectedRoute><ManagerFeedback /></ProtectedRoute>} />
+              <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/test-setup" element={<TestSetup />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ManagerModeProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

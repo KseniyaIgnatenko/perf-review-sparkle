@@ -1,4 +1,4 @@
-import { ManagerLayout } from "@/components/ManagerLayout";
+import { Navigation } from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +30,9 @@ export default function Manager() {
 
   if (isLoading) {
     return (
-      <ManagerLayout>
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto px-4 py-8">
           <Skeleton className="h-12 w-64 mb-8" />
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <Skeleton className="h-32" />
@@ -39,8 +40,8 @@ export default function Manager() {
             <Skeleton className="h-32" />
           </div>
           <Skeleton className="h-64" />
-        </div>
-      </ManagerLayout>
+        </main>
+      </div>
     );
   }
 
@@ -48,8 +49,9 @@ export default function Manager() {
   const inReviewCount = teamMembers.filter((e) => e.status === "in-review").length;
 
   return (
-    <ManagerLayout>
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">
             Обзор команды
@@ -251,7 +253,7 @@ export default function Manager() {
             </TabsContent>
           ))}
         </Tabs>
-      </div>
-    </ManagerLayout>
+      </main>
+    </div>
   );
 }
