@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck, User, Building2, UserCircle } from "lucide-react";
 import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useManagerMode } from "@/contexts/ManagerModeContext";
 
 export const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut } = useAuth();
   const { hasRole, isManager } = useUserRoles();
   const { mode, toggleMode } = useManagerMode();
@@ -37,6 +38,17 @@ export const Navigation = () => {
   });
   
   const handleLogout = () => signOut();
+
+  const handleModeToggle = () => {
+    toggleMode();
+    // При переключении на режим менеджера - переходим на страницу команды
+    // При переключении на режим сотрудника - переходим на главную
+    if (mode === 'employee') {
+      navigate('/manager');
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50">
@@ -77,7 +89,7 @@ export const Navigation = () => {
               <Button
                 variant={mode === 'manager' ? 'default' : 'outline'}
                 size="sm"
-                onClick={toggleMode}
+                onClick={handleModeToggle}
                 className="gap-2"
               >
                 {mode === 'manager' ? (
