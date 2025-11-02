@@ -27,6 +27,20 @@ export default function SelfAssessment() {
   const { answers, saveAnswerAsync } = useSelfAssessmentAnswers(currentAssessmentId);
   const { tasks } = useGoalTasks(selectedGoal || "");
   
+  // Обертки-промисы поверх мутаций для последовательных операций
+  const createAssessmentPromise = (payload: { task_id: string; goal_id?: string }) =>
+    new Promise<any>((resolve, reject) =>
+      createAssessment(payload, { onSuccess: resolve, onError: reject })
+    );
+
+  const updateAssessmentPromise = (payload: { id: string; status?: 'draft' | 'submitted' | 'reviewed'; total_score?: number | null }) =>
+    new Promise<any>((resolve, reject) =>
+      updateAssessment(payload as any, { onSuccess: resolve, onError: reject })
+    );
+  
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     results: "",
     contribution: "",
@@ -121,17 +135,26 @@ export default function SelfAssessment() {
     calculateScore(formData.teamworkScore) + calculateScore(formData.satisfactionScore);
 
   const handleSaveDraft = async () => {
-    if (!currentAssessmentId) return;
-
     try {
+      setIsSavingDraft(true);
+
+      // Гарантируем наличие оценки
+      let assessmentId = currentAssessmentId;
+      if (!assessmentId) {
+        if (!selectedTask) return;
+        const created = await createAssessmentPromise({ task_id: selectedTask, goal_id: selectedGoal });
+        assessmentId = created.id;
+        setCurrentAssessmentId(created.id);
+      }
+
       // Сохраняем все ответы
       const answersToSave = [
-        { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
-        { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
+        { self_assessment_id: assessmentId!, question_text: 'results', answer_text: formData.results, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'contribution', answer_text: formData.contribution, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'skills', answer_text: formData.skills, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'improvements', answer_text: formData.improvements, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
+        { self_assessment_id: assessmentId!, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
       ];
 
       await Promise.all(answersToSave.map(answer => saveAnswerAsync(answer)));
@@ -146,6 +169,8 @@ export default function SelfAssessment() {
         title: "Ошибка",
         description: "Не удалось сохранить черновик",
       });
+    } finally {
+      setIsSavingDraft(false);
     }
   };
 
@@ -161,25 +186,32 @@ export default function SelfAssessment() {
       return;
     }
 
-    if (!currentAssessmentId) return;
-
     try {
+      setIsSubmitting(true);
+
+      // Гарантируем наличие оценки
+      let assessmentId = currentAssessmentId;
+      if (!assessmentId) {
+        const created = await createAssessmentPromise({ task_id: selectedTask, goal_id: selectedGoal });
+        assessmentId = created.id;
+        setCurrentAssessmentId(created.id);
+      }
+
       // Сохраняем все ответы
       const answersToSave = [
-        { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
-        { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
-        { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
+        { self_assessment_id: assessmentId!, question_text: 'results', answer_text: formData.results, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'contribution', answer_text: formData.contribution, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'skills', answer_text: formData.skills, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'improvements', answer_text: formData.improvements, score: null },
+        { self_assessment_id: assessmentId!, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
+        { self_assessment_id: assessmentId!, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
       ];
 
-      // Ждём сохранения всех ответов
       await Promise.all(answersToSave.map(answer => saveAnswerAsync(answer)));
 
       // Обновляем статус оценки
-      updateAssessment({
-        id: currentAssessmentId,
+      await updateAssessmentPromise({
+        id: assessmentId!,
         status: 'submitted',
         total_score: totalScore,
       });
@@ -194,6 +226,8 @@ export default function SelfAssessment() {
         title: "Ошибка",
         description: "Не удалось отправить самооценку",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -628,13 +662,14 @@ export default function SelfAssessment() {
                         variant="outline"
                         onClick={handleSaveDraft}
                         className="gap-2"
+                        disabled={isSavingDraft || isSubmitting || !selectedTask}
                       >
                         <Save className="w-4 h-4" />
-                        Сохранить черновик
+                        {isSavingDraft ? 'Сохранение...' : 'Сохранить черновик'}
                       </Button>
-                      <Button onClick={handleSubmit} className="gap-2">
+                      <Button onClick={handleSubmit} className="gap-2" disabled={isSubmitting}>
                         <Send className="w-4 h-4" />
-                        Отправить
+                        {isSubmitting ? 'Отправка...' : 'Отправить'}
                       </Button>
                     </div>
                   </div>
