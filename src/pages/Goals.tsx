@@ -149,7 +149,7 @@ export default function Goals() {
   const { goals, isLoading, createGoal, updateGoal, deleteGoal, isCreating, isUpdating } = useGoals();
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | GoalStatus>("all");
+  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [editingProgress, setEditingProgress] = useState<string | null>(null);
   const [tempProgress, setTempProgress] = useState<number>(0);
   const { toast } = useToast();
@@ -170,13 +170,15 @@ export default function Goals() {
     completed: { label: "Завершена", variant: "outline" as const, icon: Archive },
   };
 
-  const filteredGoals = filter === "all" ? goals : goals.filter((g) => g.status === filter);
+  const filteredGoals = filter === "all" 
+    ? goals 
+    : filter === "active"
+    ? goals.filter((g) => g.status !== 'completed')
+    : goals.filter((g) => g.status === 'completed');
 
   const statusCounts = {
     all: goals.length,
-    draft: goals.filter((g) => g.status === "draft").length,
-    not_started: goals.filter((g) => g.status === "not_started").length,
-    in_progress: goals.filter((g) => g.status === "in_progress").length,
+    active: goals.filter((g) => g.status !== 'completed').length,
     completed: goals.filter((g) => g.status === "completed").length,
   };
 
@@ -528,21 +530,15 @@ export default function Goals() {
         </Card>
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)} className="mb-6">
-          <TabsList className="grid w-full grid-cols-5 max-w-4xl">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="all">
               Все ({statusCounts.all})
             </TabsTrigger>
-            <TabsTrigger value="draft">
-              Черновики ({statusCounts.draft})
-            </TabsTrigger>
-            <TabsTrigger value="not_started">
-              Не начаты ({statusCounts.not_started})
-            </TabsTrigger>
-            <TabsTrigger value="in_progress">
-              В процессе ({statusCounts.in_progress})
+            <TabsTrigger value="active">
+              Активные ({statusCounts.active})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              Завершены ({statusCounts.completed})
+              Завершенные ({statusCounts.completed})
             </TabsTrigger>
           </TabsList>
         </Tabs>
