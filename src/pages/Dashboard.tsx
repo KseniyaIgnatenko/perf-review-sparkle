@@ -72,7 +72,7 @@ export default function Dashboard() {
   const answeredQuestions = completedAssessment ? totalAssessmentQuestions : 0;
 
   // Динамический расчет этапов цикла оценки
-  const hasActiveGoals = activeGoals.length > 0;
+  const hasGoals = totalGoals > 0;  // Есть ли цели вообще
   const hasSelfAssessment = !!completedAssessment;
   const hasReceivedPeerReviews = completedReceivedReviews.length > 0;
   const hasManagerFeedback = !!managerFeedback;
@@ -88,15 +88,15 @@ export default function Dashboard() {
   const stages = [
     { 
       label: "Цели", 
-      status: getStageStatus(hasActiveGoals, false, totalGoals > 0)
+      status: getStageStatus(hasGoals, hasSelfAssessment, false)
     },
     { 
       label: "Самооценка", 
-      status: getStageStatus(hasSelfAssessment, false, hasActiveGoals)
+      status: getStageStatus(hasSelfAssessment, hasReceivedPeerReviews, hasGoals)
     },
     { 
       label: "Оценка коллег", 
-      status: getStageStatus(hasReceivedPeerReviews, false, hasSelfAssessment)
+      status: getStageStatus(hasReceivedPeerReviews, hasManagerFeedback, hasSelfAssessment)
     },
     { 
       label: "Оценка руководителя", 
