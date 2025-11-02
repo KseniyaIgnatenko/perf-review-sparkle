@@ -359,7 +359,7 @@ export default function Goals() {
                   onClick={handleSubmit}
                   disabled={isCreating || isUpdating}
                 >
-                  Сохранить
+                  Создать цель
                 </Button>
               </div>
             </CardContent>
