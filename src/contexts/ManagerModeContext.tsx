@@ -35,8 +35,15 @@ export function ManagerModeProvider({ children }: { children: ReactNode }) {
 
 export function useManagerMode() {
   const context = useContext(ManagerModeContext);
+  
+  // Если контекст не найден, возвращаем дефолтные значения (для не-менеджеров)
   if (context === undefined) {
-    throw new Error('useManagerMode must be used within a ManagerModeProvider');
+    return {
+      mode: 'employee' as ManagerMode,
+      setMode: () => {},
+      toggleMode: () => {},
+    };
   }
+  
   return context;
 }
