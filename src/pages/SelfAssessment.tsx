@@ -24,7 +24,7 @@ export default function SelfAssessment() {
   const [selectedTask, setSelectedTask] = useState("");
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   
-  const { answers, saveAnswer } = useSelfAssessmentAnswers(currentAssessmentId);
+  const { answers, saveAnswerAsync } = useSelfAssessmentAnswers(currentAssessmentId);
   const { tasks } = useGoalTasks(selectedGoal || "");
   
   const [formData, setFormData] = useState({
@@ -120,28 +120,36 @@ export default function SelfAssessment() {
   const totalScore =
     calculateScore(formData.teamworkScore) + calculateScore(formData.satisfactionScore);
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!currentAssessmentId) return;
 
-    // Сохраняем все ответы
-    const answersToSave = [
-      { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
-      { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
-    ];
+    try {
+      // Сохраняем все ответы
+      const answersToSave = [
+        { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
+        { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
+      ];
 
-    answersToSave.forEach(answer => saveAnswer(answer));
+      await Promise.all(answersToSave.map(answer => saveAnswerAsync(answer)));
 
-    toast({
-      title: "Черновик сохранен",
-      description: "Ваши ответы автоматически сохранены",
-    });
+      toast({
+        title: "Черновик сохранен",
+        description: "Ваши ответы автоматически сохранены",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось сохранить черновик",
+      });
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedTask || !formData.results.trim() || !formData.contribution.trim() || 
         !formData.skills.trim() || !formData.improvements.trim() ||
         formData.teamworkScore === 0 || formData.satisfactionScore === 0) {
@@ -155,29 +163,38 @@ export default function SelfAssessment() {
 
     if (!currentAssessmentId) return;
 
-    // Сохраняем все ответы
-    const answersToSave = [
-      { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
-      { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
-      { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
-    ];
+    try {
+      // Сохраняем все ответы
+      const answersToSave = [
+        { self_assessment_id: currentAssessmentId, question_text: 'results', answer_text: formData.results, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'contribution', answer_text: formData.contribution, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'skills', answer_text: formData.skills, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'improvements', answer_text: formData.improvements, score: null },
+        { self_assessment_id: currentAssessmentId, question_text: 'teamwork', answer_text: '', score: formData.teamworkScore },
+        { self_assessment_id: currentAssessmentId, question_text: 'satisfaction', answer_text: '', score: formData.satisfactionScore },
+      ];
 
-    answersToSave.forEach(answer => saveAnswer(answer));
+      // Ждём сохранения всех ответов
+      await Promise.all(answersToSave.map(answer => saveAnswerAsync(answer)));
 
-    // Обновляем статус оценки
-    updateAssessment({
-      id: currentAssessmentId,
-      status: 'submitted',
-      total_score: totalScore,
-    });
+      // Обновляем статус оценки
+      updateAssessment({
+        id: currentAssessmentId,
+        status: 'submitted',
+        total_score: totalScore,
+      });
 
-    toast({
-      title: "Самооценка отправлена",
-      description: "Ваша самооценка успешно отправлена",
-    });
+      toast({
+        title: "Самооценка отправлена",
+        description: "Ваша самооценка успешно отправлена",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Не удалось отправить самооценку",
+      });
+    }
   };
 
   if (goalsLoading) {
