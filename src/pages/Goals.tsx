@@ -155,6 +155,8 @@ export default function Goals() {
     description: "",
     period: "",
   });
+  const [formTasks, setFormTasks] = useState<string[]>([]);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const statusConfig = {
     draft: { label: "Черновик", variant: "secondary" as const, icon: FileEdit },
@@ -229,10 +231,25 @@ export default function Goals() {
         due_date: formData.deadline || null,
         period: formData.period || null,
         status: 'draft',
+      }, {
+        onSuccess: async (newGoal) => {
+          // Создаем задачи для новой цели
+          if (formTasks.length > 0) {
+            const { supabase } = await import('@/integrations/supabase/client');
+            const tasksToInsert = formTasks.map(title => ({
+              goal_id: newGoal.id,
+              title,
+              is_done: false
+            }));
+            await supabase.from('goal_tasks').insert(tasksToInsert);
+          }
+        }
       });
     }
 
     setFormData({ title: "", deadline: "", description: "", period: "" });
+    setFormTasks([]);
+    setNewTaskTitle("");
     setIsCreatingNew(false);
     setEditingId(null);
   };
@@ -245,11 +262,15 @@ export default function Goals() {
       description: goal.description || "",
       period: goal.period || "",
     });
+    setFormTasks([]);
+    setNewTaskTitle("");
     setIsCreatingNew(true);
   };
 
   const handleCancel = () => {
     setFormData({ title: "", deadline: "", description: "", period: "" });
+    setFormTasks([]);
+    setNewTaskTitle("");
     setIsCreatingNew(false);
     setEditingId(null);
   };
@@ -343,6 +364,61 @@ export default function Goals() {
                   rows={6}
                 />
               </div>
+
+              {/* Секция для добавления задач */}
+              {!editingId && (
+                <div className="space-y-3 pt-2">
+                  <Label>Задачи по цели (опционально)</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Добавьте задачи, которые нужно выполнить для достижения цели
+                  </p>
+                  
+                  {formTasks.length > 0 && (
+                    <div className="space-y-2">
+                      {formTasks.map((task, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 rounded border bg-muted/30">
+                          <span className="text-sm flex-1">{task}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setFormTasks(formTasks.filter((_, i) => i !== index))}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Название задачи"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newTaskTitle.trim()) {
+                          setFormTasks([...formTasks, newTaskTitle]);
+                          setNewTaskTitle("");
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (newTaskTitle.trim()) {
+                          setFormTasks([...formTasks, newTaskTitle]);
+                          setNewTaskTitle("");
+                        }
+                      }}
+                      disabled={!newTaskTitle.trim()}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3 justify-end">
                 <Button variant="ghost" onClick={handleCancel}>
