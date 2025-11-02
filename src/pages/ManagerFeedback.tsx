@@ -21,10 +21,12 @@ export default function ManagerFeedback() {
   const employeeName = searchParams.get('employeeName');
   const navigate = useNavigate();
   
-  const [totalScore, setTotalScore] = useState<string>("");
+  const [resultAchievementScore, setResultAchievementScore] = useState<string>("");
   const [personalQualities, setPersonalQualities] = useState("");
   const [personalContribution, setPersonalContribution] = useState("");
+  const [collaborationQualityScore, setCollaborationQualityScore] = useState<string>("");
   const [improvementFeedback, setImprovementFeedback] = useState("");
+  const [totalScore, setTotalScore] = useState<string>("");
   const [comment, setComment] = useState("");
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
   
@@ -67,7 +69,7 @@ export default function ManagerFeedback() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!employeeId || !totalScore) {
+    if (!employeeId || !resultAchievementScore || !collaborationQualityScore || !totalScore) {
       return;
     }
 
@@ -77,6 +79,8 @@ export default function ManagerFeedback() {
       {
         employeeId,
         totalScore: parseFloat(totalScore),
+        resultAchievementScore: parseFloat(resultAchievementScore),
+        collaborationQualityScore: parseFloat(collaborationQualityScore),
         strengthsFeedback: combinedFeedback,
         improvementFeedback,
         comment,
@@ -281,6 +285,27 @@ export default function ManagerFeedback() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
+                  <Label htmlFor="resultAchievementScore" className="text-base">
+                    Вопрос 1: Насколько сотруднику удалось достичь результатов, которые были запланированы по задаче? <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="resultAchievementScore"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={resultAchievementScore}
+                    onChange={(e) => setResultAchievementScore(e.target.value)}
+                    placeholder="Введите оценку от 0 до 10"
+                    required
+                    className="text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Шкала: 0 - результаты не достигнуты, 10 - все результаты полностью достигнуты
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="personalQualities" className="text-base">
                     Вопрос 2: Прокомментируй, какие личные качества помогли сотруднику достичь результата
                   </Label>
@@ -306,6 +331,27 @@ export default function ManagerFeedback() {
                     rows={5}
                     className="resize-none"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="collaborationQualityScore" className="text-base">
+                    Вопрос 4: Оцени качество взаимодействия по общей оценке коллег <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="collaborationQualityScore"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={collaborationQualityScore}
+                    onChange={(e) => setCollaborationQualityScore(e.target.value)}
+                    placeholder="Введите оценку от 0 до 10"
+                    required
+                    className="text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Шкала: 0 - низкое качество взаимодействия, 10 - отличное взаимодействие
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -388,7 +434,7 @@ export default function ManagerFeedback() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSubmitting || !totalScore}
+                    disabled={isSubmitting || !resultAchievementScore || !collaborationQualityScore || !totalScore}
                     className="flex-1"
                   >
                     {isSubmitting ? "Сохранение..." : "Сохранить оценку"}

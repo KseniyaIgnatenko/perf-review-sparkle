@@ -8,6 +8,8 @@ export interface ManagerFeedback {
   employee_id: string;
   manager_id: string;
   total_score: number | null;
+  result_achievement_score: number | null;
+  collaboration_quality_score: number | null;
   comment: string | null;
   strengths_feedback: string | null;
   improvement_feedback: string | null;
@@ -45,14 +47,18 @@ export function useManagerFeedback() {
   const submitFeedback = useMutation({
     mutationFn: async ({ 
       employeeId, 
-      totalScore, 
+      totalScore,
+      resultAchievementScore,
+      collaborationQualityScore,
       comment,
       strengthsFeedback,
       improvementFeedback,
       goalId
     }: { 
       employeeId: string; 
-      totalScore: number; 
+      totalScore: number;
+      resultAchievementScore?: number;
+      collaborationQualityScore?: number;
       comment?: string;
       strengthsFeedback?: string;
       improvementFeedback?: string;
@@ -74,6 +80,8 @@ export function useManagerFeedback() {
           .from('manager_feedbacks')
           .update({
             total_score: totalScore,
+            result_achievement_score: resultAchievementScore,
+            collaboration_quality_score: collaborationQualityScore,
             comment: comment,
             strengths_feedback: strengthsFeedback,
             improvement_feedback: improvementFeedback,
@@ -91,6 +99,8 @@ export function useManagerFeedback() {
             employee_id: employeeId,
             manager_id: user.id,
             total_score: totalScore,
+            result_achievement_score: resultAchievementScore,
+            collaboration_quality_score: collaborationQualityScore,
             comment: comment,
             strengths_feedback: strengthsFeedback,
             improvement_feedback: improvementFeedback,

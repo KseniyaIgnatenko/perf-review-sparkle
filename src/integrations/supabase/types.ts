@@ -153,6 +153,7 @@ export type Database = {
       }
       manager_feedbacks: {
         Row: {
+          collaboration_quality_score: number | null
           comment: string | null
           created_at: string | null
           employee_id: string
@@ -160,11 +161,13 @@ export type Database = {
           id: string
           improvement_feedback: string | null
           manager_id: string
+          result_achievement_score: number | null
           strengths_feedback: string | null
           total_score: number | null
           updated_at: string | null
         }
         Insert: {
+          collaboration_quality_score?: number | null
           comment?: string | null
           created_at?: string | null
           employee_id: string
@@ -172,11 +175,13 @@ export type Database = {
           id?: string
           improvement_feedback?: string | null
           manager_id: string
+          result_achievement_score?: number | null
           strengths_feedback?: string | null
           total_score?: number | null
           updated_at?: string | null
         }
         Update: {
+          collaboration_quality_score?: number | null
           comment?: string | null
           created_at?: string | null
           employee_id?: string
@@ -184,6 +189,7 @@ export type Database = {
           id?: string
           improvement_feedback?: string | null
           manager_id?: string
+          result_achievement_score?: number | null
           strengths_feedback?: string | null
           total_score?: number | null
           updated_at?: string | null
