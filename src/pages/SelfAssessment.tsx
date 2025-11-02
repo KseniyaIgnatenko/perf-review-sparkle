@@ -210,9 +210,9 @@ export default function SelfAssessment() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Самооценка</h1>
-          <p className="text-muted-foreground text-lg">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Самооценка</h1>
+          <p className="text-muted-foreground">
             Оцените свою работу за отчетный период
           </p>
         </div>
