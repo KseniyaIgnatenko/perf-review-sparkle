@@ -135,7 +135,7 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
 
   const saveAnswer = useMutation({
     mutationFn: async (answer: Omit<SelfAssessmentAnswer, 'id'>) => {
-      // Используем upsert для атомарной операции (insert or update)
+      // Используем upsert с именем constraint'а
       const { data, error } = await supabase
         .from('self_assessment_answers')
         .upsert(
@@ -146,7 +146,8 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
             score: answer.score,
           },
           {
-            onConflict: 'self_assessment_id,question_text'
+            onConflict: 'self_assessment_id,question_text',
+            ignoreDuplicates: false
           }
         )
         .select()
