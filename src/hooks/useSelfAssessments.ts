@@ -94,6 +94,9 @@ export function useSelfAssessments() {
     isLoading,
     createAssessment: createAssessment.mutate,
     updateAssessment: updateAssessment.mutate,
+    // Async versions for sequential flows
+    createAssessmentAsync: createAssessment.mutateAsync,
+    updateAssessmentAsync: updateAssessment.mutateAsync,
   };
 }
 
@@ -137,7 +140,8 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessment-answers'] });
+      // Invalidate the specific assessment answers query to refresh UI immediately
+      queryClient.invalidateQueries({ queryKey: ['assessment-answers', assessmentId] });
     },
   });
 

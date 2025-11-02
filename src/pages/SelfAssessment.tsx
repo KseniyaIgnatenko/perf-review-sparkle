@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 export default function SelfAssessment() {
   const { goals, isLoading: goalsLoading } = useGoals();
-  const { assessments, createAssessment, updateAssessment } = useSelfAssessments();
+  const { assessments, createAssessment, updateAssessment, createAssessmentAsync, updateAssessmentAsync } = useSelfAssessments();
   
   const [selectedGoal, setSelectedGoal] = useState("");
   const [selectedTask, setSelectedTask] = useState("");
@@ -27,16 +27,12 @@ export default function SelfAssessment() {
   const { answers, saveAnswerAsync } = useSelfAssessmentAnswers(currentAssessmentId);
   const { tasks } = useGoalTasks(selectedGoal || "");
   
-  // Обертки-промисы поверх мутаций для последовательных операций
+  // Асинхронные обертки для последовательных операций
   const createAssessmentPromise = (payload: { task_id: string; goal_id?: string }) =>
-    new Promise<any>((resolve, reject) =>
-      createAssessment(payload, { onSuccess: resolve, onError: reject })
-    );
+    createAssessmentAsync(payload);
 
   const updateAssessmentPromise = (payload: { id: string; status?: 'draft' | 'submitted' | 'reviewed'; total_score?: number | null }) =>
-    new Promise<any>((resolve, reject) =>
-      updateAssessment(payload as any, { onSuccess: resolve, onError: reject })
-    );
+    updateAssessmentAsync(payload as any);
   
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -167,7 +163,7 @@ export default function SelfAssessment() {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось сохранить черновик",
+        description: error instanceof Error ? error.message : "Не удалось сохранить черновик",
       });
     } finally {
       setIsSavingDraft(false);
@@ -224,7 +220,7 @@ export default function SelfAssessment() {
       toast({
         variant: "destructive",
         title: "Ошибка",
-        description: "Не удалось отправить самооценку",
+        description: error instanceof Error ? error.message : "Не удалось отправить самооценку",
       });
     } finally {
       setIsSubmitting(false);
