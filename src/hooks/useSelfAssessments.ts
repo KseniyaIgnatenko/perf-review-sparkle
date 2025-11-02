@@ -135,19 +135,20 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
 
   const saveAnswer = useMutation({
     mutationFn: async (answer: Omit<SelfAssessmentAnswer, 'id'>) => {
-      // Удаляем существующий ответ на этот вопрос
-      const { error: deleteError } = await supabase
-        .from('self_assessment_answers')
-        .delete()
-        .eq('self_assessment_id', answer.self_assessment_id)
-        .eq('question_text', answer.question_text);
-      
-      if (deleteError) throw deleteError;
-
-      // Вставляем новый ответ
+      // Используем upsert для атомарной операции (insert or update)
       const { data, error } = await supabase
         .from('self_assessment_answers')
-        .insert(answer)
+        .upsert(
+          {
+            self_assessment_id: answer.self_assessment_id,
+            question_text: answer.question_text,
+            answer_text: answer.answer_text,
+            score: answer.score,
+          },
+          {
+            onConflict: 'self_assessment_id,question_text'
+          }
+        )
         .select()
         .single();
       
