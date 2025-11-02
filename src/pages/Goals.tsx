@@ -123,7 +123,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
           </div>
         )}
       </div>
-      {isDraft && !isAddingTask && tasks.length < 10 && (
+      {isDraft && !isAddingTask && tasks.length < 3 && (
         <Button
           variant="outline"
           size="sm"
@@ -134,11 +134,16 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
           Добавить задачу
         </Button>
       )}
+      {isDraft && tasks.length >= 3 && (
+        <p className="text-xs text-muted-foreground">
+          Достигнуто максимальное количество задач (3)
+        </p>
+      )}
     </div>
   );
 };
 
-type GoalStatus = 'draft' | 'completed';
+type GoalStatus = 'draft' | 'not_started' | 'in_progress' | 'completed';
 
 export default function Goals() {
   const { goals, isLoading, createGoal, updateGoal, deleteGoal, isCreating, isUpdating } = useGoals();
@@ -160,6 +165,8 @@ export default function Goals() {
 
   const statusConfig = {
     draft: { label: "Черновик", variant: "secondary" as const, icon: FileEdit },
+    not_started: { label: "Не начата", variant: "outline" as const, icon: Clock },
+    in_progress: { label: "В процессе", variant: "default" as const, icon: TrendingUp },
     completed: { label: "Завершена", variant: "outline" as const, icon: Archive },
   };
 
@@ -168,6 +175,8 @@ export default function Goals() {
   const statusCounts = {
     all: goals.length,
     draft: goals.filter((g) => g.status === "draft").length,
+    not_started: goals.filter((g) => g.status === "not_started").length,
+    in_progress: goals.filter((g) => g.status === "in_progress").length,
     completed: goals.filter((g) => g.status === "completed").length,
   };
 
@@ -205,7 +214,7 @@ export default function Goals() {
     setEditingId(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title.trim() || !formData.description.trim()) {
       toast({
         title: "Ошибка",
@@ -215,22 +224,45 @@ export default function Goals() {
       return;
     }
 
+    // Определяем статус на основе заполненности полей
+    const status = 'not_started';
+
     if (editingId) {
-      updateGoal({
-        id: editingId,
-        title: formData.title,
-        description: formData.description,
-        due_date: formData.deadline || null,
-        period: formData.period || null,
-        status: 'draft',
-      });
+      // При редактировании обновляем цель и задачи
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Обновляем цель
+      await supabase
+        .from('goals')
+        .update({
+          title: formData.title,
+          description: formData.description,
+          due_date: formData.deadline || null,
+          period: formData.period || null,
+          status,
+        })
+        .eq('id', editingId);
+
+      // Удаляем старые задачи и создаем новые
+      await supabase.from('goal_tasks').delete().eq('goal_id', editingId);
+      
+      if (formTasks.length > 0) {
+        const tasksToInsert = formTasks.map(title => ({
+          goal_id: editingId,
+          title,
+          is_done: false
+        }));
+        await supabase.from('goal_tasks').insert(tasksToInsert);
+      }
+      
+      toast({ title: "Успех", description: "Цель успешно обновлена" });
     } else {
       createGoal({
         title: formData.title,
         description: formData.description,
         due_date: formData.deadline || null,
         period: formData.period || null,
-        status: 'draft',
+        status,
       }, {
         onSuccess: async (newGoal) => {
           // Создаем задачи для новой цели
@@ -254,7 +286,7 @@ export default function Goals() {
     setEditingId(null);
   };
 
-  const handleEdit = (goal: typeof goals[0]) => {
+  const handleEdit = async (goal: typeof goals[0]) => {
     setEditingId(goal.id);
     setFormData({
       title: goal.title,
@@ -262,7 +294,18 @@ export default function Goals() {
       description: goal.description || "",
       period: goal.period || "",
     });
-    setFormTasks([]);
+    
+    // Загружаем задачи для редактирования
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: tasks } = await supabase
+      .from('goal_tasks')
+      .select('*')
+      .eq('goal_id', goal.id)
+      .order('created_at', { ascending: true });
+    
+    if (tasks) {
+      setFormTasks(tasks.map(t => t.title));
+    }
     setNewTaskTitle("");
     setIsCreatingNew(true);
   };
@@ -366,59 +409,63 @@ export default function Goals() {
               </div>
 
               {/* Секция для добавления задач */}
-              {!editingId && (
-                <div className="space-y-3 pt-2">
-                  <Label>Задачи по цели (опционально)</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Добавьте задачи, которые нужно выполнить для достижения цели
-                  </p>
-                  
-                  {formTasks.length > 0 && (
-                    <div className="space-y-2">
-                      {formTasks.map((task, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 rounded border bg-muted/30">
-                          <span className="text-sm flex-1">{task}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setFormTasks(formTasks.filter((_, i) => i !== index))}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Название задачи"
-                      value={newTaskTitle}
-                      onChange={(e) => setNewTaskTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newTaskTitle.trim()) {
-                          setFormTasks([...formTasks, newTaskTitle]);
-                          setNewTaskTitle("");
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (newTaskTitle.trim()) {
-                          setFormTasks([...formTasks, newTaskTitle]);
-                          setNewTaskTitle("");
-                        }
-                      }}
-                      disabled={!newTaskTitle.trim()}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
+              <div className="space-y-3 pt-2">
+                <Label>Задачи по цели (опционально, до 3 задач)</Label>
+                <p className="text-sm text-muted-foreground">
+                  Добавьте задачи, которые нужно выполнить для достижения цели
+                </p>
+                
+                {formTasks.length > 0 && (
+                  <div className="space-y-2">
+                    {formTasks.map((task, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 rounded border bg-muted/30">
+                        <span className="text-sm flex-1">{task}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setFormTasks(formTasks.filter((_, i) => i !== index))}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Название задачи"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newTaskTitle.trim() && formTasks.length < 3) {
+                        setFormTasks([...formTasks, newTaskTitle]);
+                        setNewTaskTitle("");
+                      }
+                    }}
+                    disabled={formTasks.length >= 3}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (newTaskTitle.trim() && formTasks.length < 3) {
+                        setFormTasks([...formTasks, newTaskTitle]);
+                        setNewTaskTitle("");
+                      }
+                    }}
+                    disabled={!newTaskTitle.trim() || formTasks.length >= 3}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 </div>
-              )}
+                {formTasks.length >= 3 && (
+                  <p className="text-xs text-muted-foreground">
+                    Достигнуто максимальное количество задач (3)
+                  </p>
+                )}
+              </div>
 
               <div className="flex gap-3 justify-end">
                 <Button variant="ghost" onClick={handleCancel}>
@@ -481,12 +528,18 @@ export default function Goals() {
         </Card>
 
         <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-5 max-w-4xl">
             <TabsTrigger value="all">
               Все ({statusCounts.all})
             </TabsTrigger>
             <TabsTrigger value="draft">
               Черновики ({statusCounts.draft})
+            </TabsTrigger>
+            <TabsTrigger value="not_started">
+              Не начаты ({statusCounts.not_started})
+            </TabsTrigger>
+            <TabsTrigger value="in_progress">
+              В процессе ({statusCounts.in_progress})
             </TabsTrigger>
             <TabsTrigger value="completed">
               Завершены ({statusCounts.completed})

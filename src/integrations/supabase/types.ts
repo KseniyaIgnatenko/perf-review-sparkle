@@ -559,7 +559,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "hr" | "manager" | "employee"
       assessment_status: "draft" | "submitted" | "reviewed"
-      goal_status: "draft" | "completed"
+      goal_status: "draft" | "completed" | "not_started" | "in_progress"
       report_status: "ready" | "in_progress"
       report_type: "personal" | "team" | "company"
       review_status: "pending" | "submitted" | "received"
@@ -694,7 +694,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "hr", "manager", "employee"],
       assessment_status: ["draft", "submitted", "reviewed"],
-      goal_status: ["draft", "completed"],
+      goal_status: ["draft", "completed", "not_started", "in_progress"],
       report_status: ["ready", "in_progress"],
       report_type: ["personal", "team", "company"],
       review_status: ["pending", "submitted", "received"],

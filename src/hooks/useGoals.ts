@@ -9,7 +9,7 @@ export interface Goal {
   description: string | null;
   due_date: string | null;
   period: string | null;
-  status: 'draft' | 'completed';
+  status: 'draft' | 'not_started' | 'in_progress' | 'completed';
   progress: number;
   created_at: string;
   updated_at: string;
@@ -160,7 +160,7 @@ export function useGoalTasks(goalId: string | null) {
       
       if (error) throw error;
       
-      // Если обновляем статус задачи, пересчитываем прогресс цели
+      // Если обновляем статус задачи, пересчитываем прогресс и статус цели
       if (updates.is_done !== undefined && goalId) {
         const { data: allTasks } = await supabase
           .from('goal_tasks')
@@ -171,10 +171,34 @@ export function useGoalTasks(goalId: string | null) {
           const completedTasks = allTasks.filter(t => t.is_done).length;
           const progress = Math.round((completedTasks / allTasks.length) * 100);
           
-          await supabase
+          // Определяем статус на основе прогресса
+          let newStatus: 'not_started' | 'in_progress' | 'completed' = 'not_started';
+          if (progress === 100) {
+            newStatus = 'completed';
+          } else if (progress > 0) {
+            newStatus = 'in_progress';
+          }
+          
+          // Получаем текущую цель для проверки обязательных полей
+          const { data: goal } = await supabase
             .from('goals')
-            .update({ progress })
-            .eq('id', goalId);
+            .select('title, description')
+            .eq('id', goalId)
+            .single();
+          
+          // Обновляем только если обязательные поля заполнены
+          if (goal && goal.title && goal.description) {
+            await supabase
+              .from('goals')
+              .update({ progress, status: newStatus })
+              .eq('id', goalId);
+          } else {
+            // Если обязательные поля не заполнены, оставляем в draft
+            await supabase
+              .from('goals')
+              .update({ progress, status: 'draft' })
+              .eq('id', goalId);
+          }
         }
       }
       
