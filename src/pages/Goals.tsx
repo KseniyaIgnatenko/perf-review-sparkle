@@ -82,7 +82,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
   }
 
   const isDraft = status === 'draft';
-  const canEditTasks = status === 'draft';
+  const canEditTasks = status === 'draft' || status === 'not_started' || status === 'in_progress';
 
   return (
     <div className="space-y-2">
