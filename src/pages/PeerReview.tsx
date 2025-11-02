@@ -33,11 +33,13 @@ export default function PeerReview() {
   const [comment, setComment] = useState("");
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [selectedColleagueId, setSelectedColleagueId] = useState<string>("");
-  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
-  const [selectedTaskId, setSelectedTaskId] = useState<string>("");
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("none");
+  const [selectedTaskId, setSelectedTaskId] = useState<string>("none");
 
   // Получаем задачи для выбранной цели
-  const { tasks: tasksForSelectedGoal = [] } = useGoalTasks(selectedGoalId || null);
+  const { tasks: tasksForSelectedGoal = [] } = useGoalTasks(
+    selectedGoalId && selectedGoalId !== 'none' ? selectedGoalId : null
+  );
 
   const handleRequestReview = () => {
     if (!selectedColleagueId) {
@@ -52,15 +54,15 @@ export default function PeerReview() {
     requestReview(
       { 
         reviewerId: selectedColleagueId,
-        goalId: selectedGoalId || undefined,
-        taskId: selectedTaskId || undefined
+        goalId: selectedGoalId && selectedGoalId !== 'none' ? selectedGoalId : undefined,
+        taskId: selectedTaskId && selectedTaskId !== 'none' ? selectedTaskId : undefined
       },
       {
         onSuccess: () => {
           setRequestDialogOpen(false);
           setSelectedColleagueId("");
-          setSelectedGoalId("");
-          setSelectedTaskId("");
+          setSelectedGoalId("none");
+          setSelectedTaskId("none");
         },
       }
     );
@@ -174,14 +176,14 @@ export default function PeerReview() {
                     value={selectedGoalId} 
                     onValueChange={(value) => {
                       setSelectedGoalId(value);
-                      setSelectedTaskId(""); // Сбрасываем выбранную задачу при смене цели
+                      setSelectedTaskId("none"); // Сбрасываем выбранную задачу при смене цели
                     }}
                   >
                     <SelectTrigger id="goal">
                       <SelectValue placeholder="Выберите цель" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Без привязки к цели</SelectItem>
+                      <SelectItem value="none">Без привязки к цели</SelectItem>
                       {goals.map((goal) => (
                         <SelectItem key={goal.id} value={goal.id}>
                           {goal.title}
@@ -191,7 +193,7 @@ export default function PeerReview() {
                   </Select>
                 </div>
 
-                {selectedGoalId && tasksForSelectedGoal.length > 0 && (
+                {selectedGoalId && selectedGoalId !== 'none' && tasksForSelectedGoal.length > 0 && (
                   <div className="space-y-2">
                     <Label htmlFor="task">Задача (опционально)</Label>
                     <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
@@ -199,7 +201,7 @@ export default function PeerReview() {
                         <SelectValue placeholder="Выберите задачу" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">На всю цель</SelectItem>
+                        <SelectItem value="none">На всю цель</SelectItem>
                         {tasksForSelectedGoal.map((task) => (
                           <SelectItem key={task.id} value={task.id}>
                             {task.title}
