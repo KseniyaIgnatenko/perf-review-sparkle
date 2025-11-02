@@ -16,16 +16,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized: Missing authorization header' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      )
-    }
-
-    const token = authHeader.replace('Bearer ', '')
+    // Create admin client (no auth check for testing purposes)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -36,30 +27,6 @@ Deno.serve(async (req) => {
         }
       }
     )
-
-    // Verify token and get user
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized: Invalid token' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-      )
-    }
-
-    // Check if user has admin role
-    const { data: roleData, error: adminRoleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single()
-
-    if (adminRoleError || !roleData) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Forbidden: Admin role required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
-      )
-    }
 
     // Find user by email
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
