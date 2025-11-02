@@ -148,7 +148,7 @@ export default function Login() {
                   <Input
                     id="signin-email"
                     type="text"
-                    placeholder="Иванов Иван Иванович"
+                    placeholder="example@company.com или Иванов Иван Иванович"
                     value={emailOrName}
                     onChange={(e) => setEmailOrName(e.target.value)}
                     maxLength={100}
