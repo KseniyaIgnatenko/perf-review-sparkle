@@ -117,13 +117,21 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
 
   const saveAnswer = useMutation({
     mutationFn: async (answer: Omit<SelfAssessmentAnswer, 'id'>) => {
+      // Удаляем существующий ответ на этот вопрос
+      const { error: deleteError } = await supabase
+        .from('self_assessment_answers')
+        .delete()
+        .eq('self_assessment_id', answer.self_assessment_id)
+        .eq('question_text', answer.question_text);
+      
+      if (deleteError) throw deleteError;
+
+      // Вставляем новый ответ
       const { data, error } = await supabase
         .from('self_assessment_answers')
-        .upsert(answer, {
-          onConflict: 'self_assessment_id,question_text'
-        })
+        .insert(answer)
         .select()
-        .maybeSingle();
+        .single();
       
       if (error) throw error;
       return data;
