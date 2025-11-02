@@ -182,12 +182,18 @@ export function useGoalTasks(goalId: string | null) {
           // Получаем текущую цель для проверки обязательных полей
           const { data: goal } = await supabase
             .from('goals')
-            .select('title, description')
+            .select('title, description, due_date, period')
             .eq('id', goalId)
-            .single();
+            .maybeSingle();
+          
+          // Проверяем все обязательные поля: название, описание И (срок ИЛИ период)
+          const hasRequiredFields = goal && 
+                                    goal.title && 
+                                    goal.description && 
+                                    (goal.due_date || goal.period);
           
           // Обновляем только если обязательные поля заполнены
-          if (goal && goal.title && goal.description) {
+          if (hasRequiredFields) {
             await supabase
               .from('goals')
               .update({ progress, status: newStatus })
