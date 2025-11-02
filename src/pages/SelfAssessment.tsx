@@ -32,8 +32,8 @@ export default function SelfAssessment() {
     contribution: "",
     skills: "",
     improvements: "",
-    teamworkScore: 5,
-    satisfactionScore: 5,
+    teamworkScore: 0,
+    satisfactionScore: 0,
   });
   const [openAccordion, setOpenAccordion] = useState<string>("");
   const { toast } = useToast();
@@ -70,8 +70,8 @@ export default function SelfAssessment() {
         contribution: contributionAnswer?.answer_text || "",
         skills: skillsAnswer?.answer_text || "",
         improvements: improvementsAnswer?.answer_text || "",
-        teamworkScore: teamworkAnswer?.score || 5,
-        satisfactionScore: satisfactionAnswer?.score || 5,
+        teamworkScore: teamworkAnswer?.score || 0,
+        satisfactionScore: satisfactionAnswer?.score || 0,
       });
     }
   }, [answers]);
@@ -96,11 +96,11 @@ export default function SelfAssessment() {
     },
     {
       label: "Командная работа",
-      status: "completed" as const,
+      status: formData.teamworkScore > 0 ? "completed" as const : openAccordion === "teamwork" ? "in-progress" as const : "not-started" as const,
     },
     {
       label: "Удовлетворенность",
-      status: "completed" as const,
+      status: formData.satisfactionScore > 0 ? "completed" as const : openAccordion === "satisfaction" ? "in-progress" as const : "not-started" as const,
     },
   ];
 
@@ -111,7 +111,8 @@ export default function SelfAssessment() {
   };
 
   const getScoreLabel = (value: number) => {
-    if (value >= 0 && value <= 3) return "Низкое";
+    if (value === 0) return "Не оценено";
+    if (value >= 1 && value <= 3) return "Низкое";
     if (value >= 4 && value <= 7) return "Среднее";
     return "Высокое";
   };
@@ -141,7 +142,9 @@ export default function SelfAssessment() {
   };
 
   const handleSubmit = () => {
-    if (!selectedTask || !formData.results.trim() || !formData.contribution.trim()) {
+    if (!selectedTask || !formData.results.trim() || !formData.contribution.trim() || 
+        !formData.skills.trim() || !formData.improvements.trim() ||
+        formData.teamworkScore === 0 || formData.satisfactionScore === 0) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -418,7 +421,7 @@ export default function SelfAssessment() {
                 <CardHeader>
                   <CardTitle>Анкета самооценки</CardTitle>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Заполните все разделы анкеты. Поля помеченные * обязательны для заполнения.
+                    Заполните все разделы анкеты. Все поля обязательны для заполнения.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -475,7 +478,7 @@ export default function SelfAssessment() {
                     <AccordionItem value="skills">
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center justify-between w-full pr-4">
-                          <span>3. Развитие навыков</span>
+                          <span>3. Развитие навыков *</span>
                           {formData.skills && (
                             <CheckCircle2 className="w-5 h-5 text-success" />
                           )}
@@ -497,7 +500,7 @@ export default function SelfAssessment() {
                     <AccordionItem value="improvements">
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center justify-between w-full pr-4">
-                          <span>4. Планы по улучшению</span>
+                          <span>4. Планы по улучшению *</span>
                           {formData.improvements && (
                             <CheckCircle2 className="w-5 h-5 text-success" />
                           )}
@@ -519,8 +522,10 @@ export default function SelfAssessment() {
                     <AccordionItem value="teamwork">
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center justify-between w-full pr-4">
-                          <span>5. Командная работа</span>
-                          <CheckCircle2 className="w-5 h-5 text-success" />
+                          <span>5. Командная работа *</span>
+                          {formData.teamworkScore > 0 && (
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          )}
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-4 pt-4">
@@ -528,6 +533,11 @@ export default function SelfAssessment() {
                           <p className="text-sm text-muted-foreground mb-2">
                             Оцените качество взаимодействия с коллегами при выполнении задачи
                           </p>
+                          {formData.teamworkScore === 0 && (
+                            <p className="text-sm text-warning mb-2 font-medium">
+                              ⚠️ Пожалуйста, оцените качество командной работы
+                            </p>
+                          )}
                           <div className="flex items-center gap-4">
                             <Slider
                               value={[formData.teamworkScore]}
@@ -539,12 +549,12 @@ export default function SelfAssessment() {
                               step={1}
                               className="flex-1"
                             />
-                            <Badge variant="outline" className="min-w-[80px] justify-center">
+                            <Badge variant={formData.teamworkScore === 0 ? "destructive" : "outline"} className="min-w-[80px] justify-center">
                               {formData.teamworkScore}/10
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mt-2">
-                            {getScoreLabel(formData.teamworkScore)}
+                            {formData.teamworkScore === 0 ? "Не оценено" : getScoreLabel(formData.teamworkScore)}
                           </p>
                         </div>
                       </AccordionContent>
@@ -553,8 +563,10 @@ export default function SelfAssessment() {
                     <AccordionItem value="satisfaction">
                       <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center justify-between w-full pr-4">
-                          <span>6. Удовлетворенность работой</span>
-                          <CheckCircle2 className="w-5 h-5 text-success" />
+                          <span>6. Удовлетворенность работой *</span>
+                          {formData.satisfactionScore > 0 && (
+                            <CheckCircle2 className="w-5 h-5 text-success" />
+                          )}
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="space-y-4 pt-4">
@@ -562,6 +574,11 @@ export default function SelfAssessment() {
                           <p className="text-sm text-muted-foreground mb-2">
                             Насколько вы удовлетворены результатами работы над этой задачей
                           </p>
+                          {formData.satisfactionScore === 0 && (
+                            <p className="text-sm text-warning mb-2 font-medium">
+                              ⚠️ Пожалуйста, оцените вашу удовлетворенность результатом
+                            </p>
+                          )}
                           <div className="flex items-center gap-4">
                             <Slider
                               value={[formData.satisfactionScore]}
@@ -573,12 +590,12 @@ export default function SelfAssessment() {
                               step={1}
                               className="flex-1"
                             />
-                            <Badge variant="outline" className="min-w-[80px] justify-center">
+                            <Badge variant={formData.satisfactionScore === 0 ? "destructive" : "outline"} className="min-w-[80px] justify-center">
                               {formData.satisfactionScore}/10
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground mt-2">
-                            {getScoreLabel(formData.satisfactionScore)}
+                            {formData.satisfactionScore === 0 ? "Не оценено" : getScoreLabel(formData.satisfactionScore)}
                           </p>
                         </div>
                       </AccordionContent>
