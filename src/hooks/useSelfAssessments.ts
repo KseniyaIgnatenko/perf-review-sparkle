@@ -135,26 +135,18 @@ export function useSelfAssessmentAnswers(assessmentId: string | null) {
 
   const saveAnswer = useMutation({
     mutationFn: async (answer: Omit<SelfAssessmentAnswer, 'id'>) => {
-      // Используем upsert с именем constraint'а
+      // Используем database function для надёжного upsert
       const { data, error } = await supabase
-        .from('self_assessment_answers')
-        .upsert(
-          {
-            self_assessment_id: answer.self_assessment_id,
-            question_text: answer.question_text,
-            answer_text: answer.answer_text,
-            score: answer.score,
-          },
-          {
-            onConflict: 'self_assessment_id,question_text',
-            ignoreDuplicates: false
-          }
-        )
-        .select()
-        .single();
+        .rpc('upsert_self_assessment_answer', {
+          p_self_assessment_id: answer.self_assessment_id,
+          p_question_text: answer.question_text,
+          p_answer_text: answer.answer_text || '',
+          p_score: answer.score
+        });
       
       if (error) throw error;
-      return data;
+      // rpc возвращает массив, берём первый элемент
+      return Array.isArray(data) ? data[0] : data;
     },
     onSuccess: (data) => {
       // Invalidate using the assessment_id from the saved answer

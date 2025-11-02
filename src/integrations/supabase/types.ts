@@ -556,6 +556,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      upsert_self_assessment_answer: {
+        Args: {
+          p_answer_text: string
+          p_question_text: string
+          p_score: number
+          p_self_assessment_id: string
+        }
+        Returns: {
+          answer_text: string
+          created_at: string
+          id: string
+          question_text: string
+          score: number
+          self_assessment_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "hr" | "manager" | "employee"
