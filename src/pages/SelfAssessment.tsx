@@ -181,7 +181,7 @@ export default function SelfAssessment() {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+        <main className="container mx-auto px-4 py-8 space-y-8">
           <Skeleton className="h-12 w-64" />
           <Skeleton className="h-48" />
           <Skeleton className="h-64" />
@@ -209,7 +209,7 @@ export default function SelfAssessment() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+      <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold">Самооценка</h1>
           <p className="text-muted-foreground text-lg">
