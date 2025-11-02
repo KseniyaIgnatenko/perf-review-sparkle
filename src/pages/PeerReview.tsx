@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function PeerReview() {
   const { user } = useAuth();
-  const { reviewsToWrite, reviewsReceived, isLoading, requestReview, isRequesting, submitReview, isSubmitting } = usePeerReviews();
+  const { reviewsToWrite, reviewsReceived, requestsSent, isLoading, requestReview, isRequesting, submitReview, isSubmitting } = usePeerReviews();
   const { profiles } = useProfiles();
   const { goals } = useGoals();
   const { toast } = useToast();
@@ -425,12 +425,119 @@ export default function PeerReview() {
             <Card className="bg-muted/30 border-muted">
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">
-                  💡 <strong>В этом разделе:</strong> вы видите отзывы, которые коллеги оставили о вашей работе. Используйте кнопку "Запросить отзыв" выше, чтобы попросить обратную связь
+                  💡 <strong>В этом разделе:</strong> вы видите отправленные запросы и отзывы, которые коллеги оставили о вашей работе. Используйте кнопку "Запросить отзыв" выше, чтобы попросить обратную связь
                 </p>
               </CardContent>
             </Card>
 
-            {reviewsReceived.length === 0 ? (
+            {/* Отправленные запросы (ожидают оценки) */}
+            {requestsSent.length > 0 && (
+              <>
+                <h3 className="text-lg font-semibold">Отправленные запросы</h3>
+                <div className="grid gap-4">
+                  {requestsSent.map((request) => (
+                    <Card key={request.id} className="shadow-card border-primary/20">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="flex items-center gap-2">
+                              {request.reviewer?.full_name || 'Коллега'}
+                              <Badge variant="secondary" className="ml-2">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Ожидает оценки
+                              </Badge>
+                            </CardTitle>
+                            <CardDescription className="mt-2">
+                              {request.reviewer?.position?.name && (
+                                <span className="text-xs">{request.reviewer.position.name}</span>
+                              )}
+                            </CardDescription>
+                            {(request.goal || request.task) && (
+                              <div className="mt-3 space-y-1">
+                                {request.goal && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Target className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Цель:</span>
+                                    <span>{request.goal.title}</span>
+                                  </div>
+                                )}
+                                {request.task && (
+                                  <div className="flex items-center gap-2 text-sm ml-6">
+                                    <span className="text-muted-foreground">Задача:</span>
+                                    <span>{request.task.title}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Полученные отзывы */}
+            {reviewsReceived.length > 0 && (
+              <>
+                <h3 className="text-lg font-semibold mt-8">Полученные отзывы</h3>
+                <div className="grid gap-4">
+                  {reviewsReceived.map((review) => (
+                    <Card key={review.id} className="shadow-card">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2">
+                              {review.reviewer?.full_name || 'Коллега'}
+                              <Badge variant="outline">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                Оценен
+                              </Badge>
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              {review.reviewer?.position?.name}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">Общая оценка</span>
+                            <span className="text-2xl font-bold text-primary">
+                              {review.score?.toFixed(1)}/10
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Сотрудничество</p>
+                              <p className="font-medium">{review.collaboration_score}/10</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Качество</p>
+                              <p className="font-medium">{review.quality_score}/10</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Коммуникация</p>
+                              <p className="font-medium">{review.communication_score}/10</p>
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                              <p className="text-sm font-medium mb-1">Комментарий:</p>
+                              <p className="text-sm text-muted-foreground">{review.comment}</p>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {requestsSent.length === 0 && reviewsReceived.length === 0 && (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -442,76 +549,6 @@ export default function PeerReview() {
                   </p>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="grid gap-4">
-                {reviewsReceived.map((review) => (
-                  <Card key={review.id} className="shadow-card">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="flex items-center gap-2">
-                            От: {review.reviewer?.full_name || 'Коллега'}
-                            {review.status === 'pending' ? (
-                              <Badge variant="secondary">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Ожидает ответа
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Получено
-                              </Badge>
-                            )}
-                          </CardTitle>
-                          <CardDescription className="mt-1 space-y-1">
-                            {review.reviewer?.position?.name && (
-                              <div className="text-sm text-muted-foreground">
-                                {review.reviewer.position.name}
-                              </div>
-                            )}
-                            {review.status === 'submitted' && review.score && (
-                              <div className="text-sm">
-                                Оценка: <span className="font-semibold text-primary">{review.score.toFixed(1)}/10</span>
-                              </div>
-                            )}
-                          </CardDescription>
-                        </div>
-                        <Badge>
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    {review.status === 'submitted' && (
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">Сотрудничество</p>
-                              <p className="font-semibold">{review.collaboration_score || '-'}/10</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Качество</p>
-                              <p className="font-semibold">{review.quality_score || '-'}/10</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground">Коммуникация</p>
-                              <p className="font-semibold">{review.communication_score || '-'}/10</p>
-                            </div>
-                          </div>
-                          {review.comment && (
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium text-muted-foreground">
-                                Комментарий:
-                              </p>
-                              <p className="text-sm leading-relaxed">{review.comment}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
-              </div>
             )}
           </TabsContent>
         </Tabs>

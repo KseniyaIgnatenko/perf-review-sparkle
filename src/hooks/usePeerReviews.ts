@@ -90,6 +90,32 @@ export function usePeerReviews() {
     enabled: !!user,
   });
 
+  // Запросы, отправленные коллегам (ожидают оценки)
+  const { data: requestsSent = [], isLoading: isLoadingRequests } = useQuery({
+    queryKey: ['peer-reviews-requests-sent', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('peer_reviews')
+        .select(`
+          *,
+          reviewer:profiles!peer_reviews_reviewer_id_fkey(
+            full_name,
+            position:positions(name)
+          ),
+          goal:goals(title),
+          task:goal_tasks(title)
+        `)
+        .eq('reviewee_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Запрос отзыва от коллеги
   const requestReview = useMutation({
     mutationFn: async ({ 
@@ -118,6 +144,7 @@ export function usePeerReviews() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['peer-reviews-received'] });
+      queryClient.invalidateQueries({ queryKey: ['peer-reviews-requests-sent'] });
       toast.success('Запрос на отзыв отправлен');
     },
     onError: (error) => {
@@ -169,7 +196,8 @@ export function usePeerReviews() {
   return {
     reviewsToWrite,
     reviewsReceived,
-    isLoading: isLoadingToWrite || isLoadingReceived,
+    requestsSent,
+    isLoading: isLoadingToWrite || isLoadingReceived || isLoadingRequests,
     requestReview: requestReview.mutate,
     isRequesting: requestReview.isPending,
     submitReview: submitReview.mutate,
