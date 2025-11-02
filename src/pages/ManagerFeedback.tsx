@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { MessageSquare, ArrowLeft, Users, Target } from "lucide-react";
+import { MessageSquare, ArrowLeft, Users, Target, CheckCircle2 } from "lucide-react";
 import { useManagerFeedback } from "@/hooks/useManagerFeedback";
 import { useProfile } from "@/hooks/useProfiles";
 import { useEmployeePeerReviews } from "@/hooks/useEmployeePeerReviews";
@@ -22,7 +22,8 @@ export default function ManagerFeedback() {
   const navigate = useNavigate();
   
   const [totalScore, setTotalScore] = useState<string>("");
-  const [strengthsFeedback, setStrengthsFeedback] = useState("");
+  const [personalQualities, setPersonalQualities] = useState("");
+  const [personalContribution, setPersonalContribution] = useState("");
   const [improvementFeedback, setImprovementFeedback] = useState("");
   const [comment, setComment] = useState("");
   const [selectedGoalId, setSelectedGoalId] = useState<string>("");
@@ -31,7 +32,7 @@ export default function ManagerFeedback() {
   const { profile, isLoading: profileLoading } = useProfile();
   const { peerReviews, isLoading: reviewsLoading } = useEmployeePeerReviews(employeeId);
   
-  // Fetch employee's goals
+  // Fetch employee's goals with tasks
   const { data: employeeGoals = [], isLoading: goalsLoading } = useQuery({
     queryKey: ['employee-goals', employeeId],
     queryFn: async () => {
@@ -39,7 +40,14 @@ export default function ManagerFeedback() {
       
       const { data, error } = await supabase
         .from('goals')
-        .select('*')
+        .select(`
+          *,
+          goal_tasks (
+            id,
+            title,
+            is_done
+          )
+        `)
         .eq('user_id', employeeId)
         .order('created_at', { ascending: false });
       
@@ -63,11 +71,13 @@ export default function ManagerFeedback() {
       return;
     }
 
+    const combinedFeedback = `Личные качества: ${personalQualities}\n\nЛичный вклад: ${personalContribution}`;
+    
     submitFeedback(
       {
         employeeId,
         totalScore: parseFloat(totalScore),
-        strengthsFeedback,
+        strengthsFeedback: combinedFeedback,
         improvementFeedback,
         comment,
         goalId: selectedGoalId || undefined,
@@ -134,7 +144,7 @@ export default function ManagerFeedback() {
         </Button>
 
         <div className="space-y-6">
-          {/* Preamble */}
+          {/* Instructions */}
           <Card className="shadow-card border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
@@ -145,13 +155,12 @@ export default function ManagerFeedback() {
             <CardContent>
               <Alert>
                 <AlertDescription className="text-base leading-relaxed">
-                  <p className="font-semibold mb-3">Преамбула:</p>
                   <p className="mb-3">
-                    Твой сотрудник работал(-а) над задачей в течение полугода, по результатам выполнения которой респонденты делились обратной связью.
+                    Сотрудник работал над задачами в течение периода оценки, по результатам выполнения которых коллеги делились обратной связью.
                   </p>
                   <ol className="list-decimal list-inside space-y-2 ml-2">
-                    <li>Ознакомься с обратной связью от респондентов</li>
-                    <li>Сформируй общую обратную связь, которая содержит в себе ОС респондентов и твою личную обратную связь</li>
+                    <li>Ознакомься с обратной связью от коллег</li>
+                    <li>Сформируй общую обратную связь, которая содержит обратную связь коллег и твою личную обратную связь</li>
                     <li>Поделись обратной связью по формату, указанному ниже</li>
                   </ol>
                 </AlertDescription>
@@ -159,13 +168,13 @@ export default function ManagerFeedback() {
             </CardContent>
           </Card>
 
-          {/* Employee's Goals */}
+          {/* Employee's Goals and Tasks */}
           {employeeGoals.length > 0 && (
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-primary" />
-                  Цели сотрудника
+                  Цели и задачи сотрудника
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -178,11 +187,32 @@ export default function ManagerFeedback() {
                         : 'border-border bg-card'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4 mb-3">
                       <div className="flex-1">
                         <h4 className="font-semibold mb-1">{goal.title}</h4>
                         {goal.description && (
-                          <p className="text-sm text-muted-foreground">{goal.description}</p>
+                          <p className="text-sm text-muted-foreground mb-3">{goal.description}</p>
+                        )}
+                        
+                        {/* Goal Tasks */}
+                        {goal.goal_tasks && goal.goal_tasks.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-sm font-medium text-muted-foreground">Задачи:</p>
+                            <ul className="space-y-1.5">
+                              {goal.goal_tasks.map((task: any) => (
+                                <li key={task.id} className="flex items-start gap-2 text-sm">
+                                  <CheckCircle2 
+                                    className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                                      task.is_done ? 'text-green-600' : 'text-muted-foreground'
+                                    }`}
+                                  />
+                                  <span className={task.is_done ? 'line-through text-muted-foreground' : ''}>
+                                    {task.title}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
                         )}
                       </div>
                       <Button
@@ -251,15 +281,29 @@ export default function ManagerFeedback() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="strengthsFeedback" className="text-base">
-                    Вопросы 2-3: Какие личные качества помогли сотруднику достичь результата, оценка личного вклада
+                  <Label htmlFor="personalQualities" className="text-base">
+                    Вопрос 2: Прокомментируй, какие личные качества помогли сотруднику достичь результата
                   </Label>
                   <Textarea
-                    id="strengthsFeedback"
-                    value={strengthsFeedback}
-                    onChange={(e) => setStrengthsFeedback(e.target.value)}
-                    placeholder='Например: "При разборе инцидента Вася предложил улучшение такое-то и реализовал доработку, это помогло команде избежать ошибок в коде. Коллеги по задаче также отмечают..."'
-                    rows={6}
+                    id="personalQualities"
+                    value={personalQualities}
+                    onChange={(e) => setPersonalQualities(e.target.value)}
+                    placeholder="Опишите личные качества сотрудника, которые помогли достичь результата"
+                    rows={5}
+                    className="resize-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="personalContribution" className="text-base">
+                    Вопрос 3: Какой личный вклад ты можешь выделить в результатах сотрудника
+                  </Label>
+                  <Textarea
+                    id="personalContribution"
+                    value={personalContribution}
+                    onChange={(e) => setPersonalContribution(e.target.value)}
+                    placeholder="Опишите конкретный вклад сотрудника в достижение результатов"
+                    rows={5}
                     className="resize-none"
                   />
                 </div>
@@ -272,8 +316,8 @@ export default function ManagerFeedback() {
                     id="improvementFeedback"
                     value={improvementFeedback}
                     onChange={(e) => setImprovementFeedback(e.target.value)}
-                    placeholder='Например: "Вася - ответственный и проактивный, это отмечают все коллеги. Однако неоднократно коллеги упоминают о сдаче задач позже срока. Предлагаю это проработать..."'
-                    rows={6}
+                    placeholder="Укажите рекомендации по улучшению работы сотрудника"
+                    rows={5}
                     className="resize-none"
                   />
                 </div>
@@ -326,9 +370,9 @@ export default function ManagerFeedback() {
 
                 <Alert>
                   <AlertDescription>
-                    <p className="font-semibold mb-2">Что делать дальше:</p>
+                    <p className="font-semibold mb-2">Следующие шаги:</p>
                     <p>
-                      26 июня обсудим алгоритм подведения итогов в формате 1:1. На ближайшем 1:1 вместе проговорите обратную связь и запланируйте шаги, как можно улучшить свои зоны.
+                      После заполнения формы обсудите с сотрудником обратную связь в формате 1:1. Вместе проговорите полученные результаты и запланируйте шаги для развития.
                     </p>
                   </AlertDescription>
                 </Alert>

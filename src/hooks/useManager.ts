@@ -6,6 +6,7 @@ export interface EmployeeWithStats {
   id: string;
   full_name: string;
   position_id: string | null;
+  position_name: string | null;
   goalsCompleted: number;
   totalGoals: number;
   selfAssessmentScore: number | null;
@@ -21,10 +22,15 @@ export function useTeamMembers() {
     queryFn: async () => {
       if (!user) return [];
       
-      // Получаем всех сотрудников
+      // Получаем всех сотрудников с их должностями
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, position_id')
+        .select(`
+          id, 
+          full_name, 
+          position_id,
+          positions:position_id (name)
+        `)
         .eq('is_active', true)
         .neq('id', user.id);
       
@@ -72,7 +78,10 @@ export function useTeamMembers() {
           }
 
           return {
-            ...profile,
+            id: profile.id,
+            full_name: profile.full_name,
+            position_id: profile.position_id,
+            position_name: (profile.positions as any)?.name || null,
             goalsCompleted,
             totalGoals,
             selfAssessmentScore,

@@ -132,7 +132,7 @@ export default function Manager() {
                         </Avatar>
                         <div>
                           <CardTitle>{employee.full_name}</CardTitle>
-                          <CardDescription>Сотрудник</CardDescription>
+                          <CardDescription>{employee.position_name || 'Сотрудник'}</CardDescription>
                         </div>
                       </div>
                       <Badge variant={getStatusBadge(employee.status).variant}>
@@ -202,7 +202,7 @@ export default function Manager() {
                           </Avatar>
                           <div>
                             <CardTitle>{employee.full_name}</CardTitle>
-                            <CardDescription>Сотрудник</CardDescription>
+                            <CardDescription>{employee.position_name || 'Сотрудник'}</CardDescription>
                           </div>
                         </div>
                       </div>
