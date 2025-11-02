@@ -233,7 +233,7 @@ export default function PeerReview() {
             </TabsTrigger>
             <TabsTrigger value="reviewed" className="gap-2">
               <Users className="w-4 h-4" />
-              Меня оценивают ({reviewsReceived.length})
+              Меня оценивают ({requestsSent.length + reviewsReceived.length})
             </TabsTrigger>
           </TabsList>
 
@@ -444,7 +444,7 @@ export default function PeerReview() {
                               {request.reviewer?.full_name || 'Коллега'}
                               <Badge variant="secondary" className="ml-2">
                                 <Clock className="w-3 h-3 mr-1" />
-                                Ожидает оценки
+                                Запрошено
                               </Badge>
                             </CardTitle>
                             <CardDescription className="mt-2">
