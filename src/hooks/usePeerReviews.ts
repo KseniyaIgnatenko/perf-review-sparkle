@@ -8,6 +8,7 @@ export interface PeerReview {
   reviewer_id: string;
   reviewee_id: string;
   goal_id: string | null;
+  task_id: string | null;
   score: number | null;
   comment: string | null;
   collaboration_score: number | null;
@@ -31,6 +32,9 @@ export interface PeerReview {
   goal?: {
     title: string;
   };
+  task?: {
+    title: string;
+  };
 }
 
 export function usePeerReviews() {
@@ -50,7 +54,8 @@ export function usePeerReviews() {
             full_name,
             position:positions(name)
           ),
-          goal:goals(title)
+          goal:goals(title),
+          task:goal_tasks(title)
         `)
         .eq('reviewer_id', user.id)
         .order('created_at', { ascending: false });
@@ -87,12 +92,22 @@ export function usePeerReviews() {
 
   // Запрос отзыва от коллеги
   const requestReview = useMutation({
-    mutationFn: async (reviewerId: string) => {
+    mutationFn: async ({ 
+      reviewerId, 
+      goalId, 
+      taskId 
+    }: { 
+      reviewerId: string; 
+      goalId?: string; 
+      taskId?: string; 
+    }) => {
       const { data, error } = await supabase
         .from('peer_reviews')
         .insert({
           reviewer_id: reviewerId,
           reviewee_id: user!.id,
+          goal_id: goalId || null,
+          task_id: taskId || null,
           status: 'pending',
         })
         .select()

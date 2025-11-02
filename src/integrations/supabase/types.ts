@@ -241,6 +241,7 @@ export type Database = {
           reviewer_id: string
           score: number | null
           status: Database["public"]["Enums"]["review_status"] | null
+          task_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -255,6 +256,7 @@ export type Database = {
           reviewer_id: string
           score?: number | null
           status?: Database["public"]["Enums"]["review_status"] | null
+          task_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -269,6 +271,7 @@ export type Database = {
           reviewer_id?: string
           score?: number | null
           status?: Database["public"]["Enums"]["review_status"] | null
+          task_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -291,6 +294,13 @@ export type Database = {
             columns: ["reviewer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_reviews_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "goal_tasks"
             referencedColumns: ["id"]
           },
         ]

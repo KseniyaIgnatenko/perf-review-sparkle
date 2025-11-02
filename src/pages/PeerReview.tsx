@@ -8,17 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, CheckCircle2, Clock, Plus, Send } from "lucide-react";
+import { Users, CheckCircle2, Clock, Plus, Send, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePeerReviews } from "@/hooks/usePeerReviews";
 import { useProfiles } from "@/hooks/useProfiles";
+import { useGoals, useGoalTasks } from "@/hooks/useGoals";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function PeerReview() {
   const { user } = useAuth();
   const { reviewsToWrite, reviewsReceived, isLoading, requestReview, isRequesting, submitReview, isSubmitting } = usePeerReviews();
   const { profiles } = useProfiles();
+  const { goals } = useGoals();
   const { toast } = useToast();
   
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
@@ -29,13 +32,38 @@ export default function PeerReview() {
   });
   const [comment, setComment] = useState("");
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [selectedColleagueId, setSelectedColleagueId] = useState<string>("");
+  const [selectedGoalId, setSelectedGoalId] = useState<string>("");
+  const [selectedTaskId, setSelectedTaskId] = useState<string>("");
 
-  const handleRequestReview = (reviewerId: string) => {
-    requestReview(reviewerId, {
-      onSuccess: () => {
-        setRequestDialogOpen(false);
+  // Получаем задачи для выбранной цели
+  const { tasks: tasksForSelectedGoal = [] } = useGoalTasks(selectedGoalId || null);
+
+  const handleRequestReview = () => {
+    if (!selectedColleagueId) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите коллегу",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    requestReview(
+      { 
+        reviewerId: selectedColleagueId,
+        goalId: selectedGoalId || undefined,
+        taskId: selectedTaskId || undefined
       },
-    });
+      {
+        onSuccess: () => {
+          setRequestDialogOpen(false);
+          setSelectedColleagueId("");
+          setSelectedGoalId("");
+          setSelectedTaskId("");
+        },
+      }
+    );
   };
 
   const handleSubmit = () => {
@@ -110,32 +138,86 @@ export default function PeerReview() {
                 Запросить отзыв
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Запросить отзыв от коллеги</DialogTitle>
                 <DialogDescription>
-                  Выберите коллегу, у которого хотите запросить отзыв о вашей работе
+                  Выберите коллегу и укажите цель или задачу, по которой хотите получить обратную связь
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {availableColleagues.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Нет доступных коллег для запроса
-                  </p>
-                ) : (
-                  availableColleagues.map((colleague) => (
-                    <Button
-                      key={colleague.id}
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => handleRequestReview(colleague.id)}
-                      disabled={isRequesting}
-                    >
-                      <Send className="w-4 h-4" />
-                      {colleague.full_name}
-                    </Button>
-                  ))
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="colleague">Коллега *</Label>
+                  <Select value={selectedColleagueId} onValueChange={setSelectedColleagueId}>
+                    <SelectTrigger id="colleague">
+                      <SelectValue placeholder="Выберите коллегу" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableColleagues.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          Нет доступных коллег
+                        </div>
+                      ) : (
+                        availableColleagues.map((colleague) => (
+                          <SelectItem key={colleague.id} value={colleague.id}>
+                            {colleague.full_name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="goal">Цель (опционально)</Label>
+                  <Select 
+                    value={selectedGoalId} 
+                    onValueChange={(value) => {
+                      setSelectedGoalId(value);
+                      setSelectedTaskId(""); // Сбрасываем выбранную задачу при смене цели
+                    }}
+                  >
+                    <SelectTrigger id="goal">
+                      <SelectValue placeholder="Выберите цель" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Без привязки к цели</SelectItem>
+                      {goals.map((goal) => (
+                        <SelectItem key={goal.id} value={goal.id}>
+                          {goal.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedGoalId && tasksForSelectedGoal.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="task">Задача (опционально)</Label>
+                    <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
+                      <SelectTrigger id="task">
+                        <SelectValue placeholder="Выберите задачу" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">На всю цель</SelectItem>
+                        {tasksForSelectedGoal.map((task) => (
+                          <SelectItem key={task.id} value={task.id}>
+                            {task.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
+
+                <Button 
+                  className="w-full gap-2" 
+                  onClick={handleRequestReview}
+                  disabled={isRequesting || !selectedColleagueId}
+                >
+                  <Send className="w-4 h-4" />
+                  Отправить запрос
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -183,11 +265,17 @@ export default function PeerReview() {
                   </CardTitle>
                   <CardDescription>
                     Заполните все поля и оцените работу коллеги
-                    {pendingReviews.find(r => r.id === selectedRequest)?.goal && (
-                      <span className="block mt-1">
+                    {pendingReviews.find(r => r.id === selectedRequest)?.task ? (
+                      <span className="flex items-center gap-1 mt-1">
+                        <Target className="w-4 h-4" />
+                        Задача: {pendingReviews.find(r => r.id === selectedRequest)?.task?.title}
+                      </span>
+                    ) : pendingReviews.find(r => r.id === selectedRequest)?.goal ? (
+                      <span className="flex items-center gap-1 mt-1">
+                        <Target className="w-4 h-4" />
                         Цель: {pendingReviews.find(r => r.id === selectedRequest)?.goal?.title}
                       </span>
-                    )}
+                    ) : null}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -266,7 +354,7 @@ export default function PeerReview() {
                   <Card key={request.id} className="shadow-card">
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <CardTitle className="flex items-center gap-2">
                             {request.reviewee?.full_name || 'Коллега'}
                             <Badge variant="secondary">
@@ -274,11 +362,17 @@ export default function PeerReview() {
                               Ожидает
                             </Badge>
                           </CardTitle>
-                          {request.goal && (
-                            <CardDescription className="mt-1">
+                          {request.task ? (
+                            <CardDescription className="flex items-center gap-1 mt-1">
+                              <Target className="w-4 h-4" />
+                              Задача: {request.task.title}
+                            </CardDescription>
+                          ) : request.goal ? (
+                            <CardDescription className="flex items-center gap-1 mt-1">
+                              <Target className="w-4 h-4" />
                               Цель: {request.goal.title}
                             </CardDescription>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </CardHeader>

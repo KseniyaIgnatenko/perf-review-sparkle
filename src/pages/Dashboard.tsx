@@ -56,11 +56,14 @@ export default function Dashboard() {
   );
   
   const handleRequestReview = (reviewerId: string) => {
-    requestReview(reviewerId, {
-      onSuccess: () => {
-        setRequestDialogOpen(false);
-      },
-    });
+    requestReview(
+      { reviewerId },
+      {
+        onSuccess: () => {
+          setRequestDialogOpen(false);
+        },
+      }
+    );
   };
   
   // Статус самооценки
