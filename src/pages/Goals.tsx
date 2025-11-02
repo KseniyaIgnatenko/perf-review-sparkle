@@ -83,6 +83,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
 
   const isDraft = status === 'draft';
   const canEditTasks = status === 'draft' || status === 'not_started' || status === 'in_progress';
+  const canAddTasks = status === 'draft' || status === 'not_started' || status === 'in_progress';
 
   return (
     <div className="space-y-2">
@@ -123,7 +124,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
           </div>
         )}
       </div>
-      {isDraft && !isAddingTask && tasks.length < 3 && (
+      {canAddTasks && !isAddingTask && tasks.length < 3 && (
         <Button
           variant="outline"
           size="sm"
@@ -134,7 +135,7 @@ const GoalTasks = ({ goalId, status }: { goalId: string; status: string }) => {
           Добавить задачу
         </Button>
       )}
-      {isDraft && tasks.length >= 3 && (
+      {canAddTasks && tasks.length >= 3 && (
         <p className="text-xs text-muted-foreground">
           Достигнуто максимальное количество задач (3)
         </p>
@@ -612,7 +613,7 @@ export default function Goals() {
                           <span className={cn("font-bold", getProgressColor(goal.progress))}>
                             {goal.progress}%
                           </span>
-                          {goal.status === 'draft' && editingProgress !== goal.id && (
+                          {(goal.status === 'draft' || goal.status === 'not_started' || goal.status === 'in_progress') && editingProgress !== goal.id && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -681,7 +682,7 @@ export default function Goals() {
                       )}
                     </div>
 
-                    {goal.status === 'draft' && (
+                    {(goal.status === 'draft' || goal.status === 'not_started' || goal.status === 'in_progress') && (
                       <div className="flex gap-2 justify-end pt-2">
                         <Button
                           variant="outline"
