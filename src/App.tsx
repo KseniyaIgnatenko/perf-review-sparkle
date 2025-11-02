@@ -19,6 +19,7 @@ import Profile from "./pages/Profile";
 import TestSetup from "./pages/TestSetup";
 import NotFound from "./pages/NotFound";
 import ManagerFeedback from "./pages/ManagerFeedback";
+import PotentialAssessment from "./pages/PotentialAssessment";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/peer-review" element={<ProtectedRoute><PeerReview /></ProtectedRoute>} />
               <Route path="/manager" element={<ProtectedRoute><Manager /></ProtectedRoute>} />
               <Route path="/manager/feedback" element={<ProtectedRoute><ManagerFeedback /></ProtectedRoute>} />
+              <Route path="/manager/potential-assessment" element={<ProtectedRoute><PotentialAssessment /></ProtectedRoute>} />
               <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

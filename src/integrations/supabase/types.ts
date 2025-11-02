@@ -323,6 +323,78 @@ export type Database = {
         }
         Relationships: []
       }
+      potential_assessments: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          manager_id: string
+          performance_category: number | null
+          performance_score: number | null
+          period: string
+          potential_category: number | null
+          potential_score: number | null
+          q1_score: number | null
+          q2_score: number | null
+          q3_1_answer: boolean | null
+          q3_2_answer: boolean | null
+          q3_3_answer: number | null
+          q3_4_answer: boolean | null
+          q3_5_answer: number | null
+          q3_6_score: number | null
+          q3_7_score: number | null
+          q3_8_score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          manager_id: string
+          performance_category?: number | null
+          performance_score?: number | null
+          period: string
+          potential_category?: number | null
+          potential_score?: number | null
+          q1_score?: number | null
+          q2_score?: number | null
+          q3_1_answer?: boolean | null
+          q3_2_answer?: boolean | null
+          q3_3_answer?: number | null
+          q3_4_answer?: boolean | null
+          q3_5_answer?: number | null
+          q3_6_score?: number | null
+          q3_7_score?: number | null
+          q3_8_score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          manager_id?: string
+          performance_category?: number | null
+          performance_score?: number | null
+          period?: string
+          potential_category?: number | null
+          potential_score?: number | null
+          q1_score?: number | null
+          q2_score?: number | null
+          q3_1_answer?: boolean | null
+          q3_2_answer?: boolean | null
+          q3_3_answer?: number | null
+          q3_4_answer?: boolean | null
+          q3_5_answer?: number | null
+          q3_6_score?: number | null
+          q3_7_score?: number | null
+          q3_8_score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
