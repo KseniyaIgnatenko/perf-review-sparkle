@@ -163,9 +163,9 @@ export default function ManagerFeedback() {
                     Сотрудник работал над задачами в течение периода оценки, по результатам выполнения которых коллеги делились обратной связью.
                   </p>
                   <ol className="list-decimal list-inside space-y-2 ml-2">
-                    <li>Ознакомься с обратной связью от коллег</li>
-                    <li>Сформируй общую обратную связь, которая содержит обратную связь коллег и твою личную обратную связь</li>
-                    <li>Поделись обратной связью по формату, указанному ниже</li>
+                    <li>Ознакомьтесь с обратной связью от коллег</li>
+                    <li>Сформируйте общую обратную связь, которая содержит обратную связь коллег и вашу личную обратную связь</li>
+                    <li>Поделитесь обратной связью по формату, указанному ниже</li>
                   </ol>
                 </AlertDescription>
               </Alert>
@@ -280,7 +280,7 @@ export default function ManagerFeedback() {
           {/* Feedback Form */}
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle>Твоя обратная связь</CardTitle>
+              <CardTitle>Обратная связь руководителя</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -307,7 +307,7 @@ export default function ManagerFeedback() {
 
                 <div className="space-y-2">
                   <Label htmlFor="personalQualities" className="text-base">
-                    Вопрос 2: Прокомментируй, какие личные качества помогли сотруднику достичь результата
+                    Вопрос 2: Прокомментируйте, какие личные качества помогли сотруднику достичь результата
                   </Label>
                   <Textarea
                     id="personalQualities"
@@ -321,7 +321,7 @@ export default function ManagerFeedback() {
 
                 <div className="space-y-2">
                   <Label htmlFor="personalContribution" className="text-base">
-                    Вопрос 3: Какой личный вклад ты можешь выделить в результатах сотрудника
+                    Вопрос 3: Какой личный вклад вы можете выделить в результатах сотрудника
                   </Label>
                   <Textarea
                     id="personalContribution"
@@ -335,7 +335,7 @@ export default function ManagerFeedback() {
 
                 <div className="space-y-2">
                   <Label htmlFor="collaborationQualityScore" className="text-base">
-                    Вопрос 4: Оцени качество взаимодействия по общей оценке коллег <span className="text-destructive">*</span>
+                    Вопрос 4: Оцените качество взаимодействия по общей оценке коллег <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="collaborationQualityScore"
@@ -356,7 +356,7 @@ export default function ManagerFeedback() {
 
                 <div className="space-y-2">
                   <Label htmlFor="improvementFeedback" className="text-base">
-                    Вопрос 5: Что ты порекомендуешь улучшить сотруднику в следующем цикле
+                    Вопрос 5: Что вы порекомендуете улучшить сотруднику в следующем цикле
                   </Label>
                   <Textarea
                     id="improvementFeedback"
