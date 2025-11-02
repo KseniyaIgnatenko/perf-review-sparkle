@@ -40,7 +40,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (emailOrName: string, password: string) => {
+    let email = emailOrName;
+    
+    // Если введено не email (нет @), ищем email по ФИО
+    if (!emailOrName.includes('@')) {
+      const { data, error } = await supabase.rpc('get_email_by_full_name', {
+        p_full_name: emailOrName
+      });
+      
+      if (error || !data) {
+        return { error: { message: 'Пользователь с таким ФИО не найден' } };
+      }
+      
+      email = data;
+    }
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

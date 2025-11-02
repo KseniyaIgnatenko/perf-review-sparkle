@@ -9,8 +9,9 @@ import winkLogo from "@/assets/wink-logo.png";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [emailOrName, setEmailOrName] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function Login() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim() || !password.trim()) {
+    if (!emailOrName.trim() || !password.trim()) {
       toast({
         variant: "destructive",
         title: "Ошибка",
@@ -41,18 +42,9 @@ export default function Login() {
       return;
     }
 
-    if (!validateEmail(email)) {
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: "Неверный формат email",
-      });
-      return;
-    }
-
     setIsLoading(true);
     
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(emailOrName, password);
     
     setIsLoading(false);
 
@@ -61,7 +53,7 @@ export default function Login() {
         variant: "destructive",
         title: "Ошибка входа",
         description: error.message === "Invalid login credentials"
-          ? "Неверный email или пароль"
+          ? "Неверный email/ФИО или пароль"
           : error.message,
       });
       return;
@@ -152,13 +144,13 @@ export default function Login() {
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email">Email или ФИО</Label>
                   <Input
                     id="signin-email"
-                    type="email"
-                    placeholder="example@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="text"
+                    placeholder="example@company.com или Иванов Иван"
+                    value={emailOrName}
+                    onChange={(e) => setEmailOrName(e.target.value)}
                     maxLength={100}
                     className="h-12"
                     disabled={isLoading}
@@ -181,7 +173,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   className="w-full h-12 text-base gradient-primary"
-                  disabled={isLoading || !email.trim() || !password.trim()}
+                  disabled={isLoading || !emailOrName.trim() || !password.trim()}
                 >
                   {isLoading ? "Вход..." : "Войти"}
                 </Button>
@@ -243,10 +235,7 @@ export default function Login() {
           </Tabs>
 
           <p className="text-center text-sm text-muted-foreground">
-            Возникли проблемы со входом?{" "}
-            <a href="#" className="text-primary hover:underline">
-              Связаться с поддержкой
-            </a>
+            Возникли проблемы со входом? Свяжитесь с технической поддержкой
           </p>
         </div>
       </div>
@@ -266,8 +255,8 @@ export default function Login() {
               <div className="text-sm opacity-80">Оценка</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold">5+</div>
-              <div className="text-sm opacity-80">Целей</div>
+              <div className="text-3xl font-bold">OKR</div>
+              <div className="text-sm opacity-80">Методология</div>
             </div>
             <div className="space-y-2">
               <div className="text-3xl font-bold">100%</div>
