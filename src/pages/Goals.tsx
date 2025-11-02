@@ -209,19 +209,39 @@ export default function Goals() {
         due_date: formData.deadline || null,
         period: formData.period || null,
         status: 'draft',
+      }, {
+        onSuccess: async (newGoal) => {
+          // Создаем задачи для черновика
+          if (formTasks.length > 0) {
+            const { supabase } = await import('@/integrations/supabase/client');
+            const tasksToInsert = formTasks.map(title => ({
+              goal_id: newGoal.id,
+              title,
+              is_done: false
+            }));
+            await supabase.from('goal_tasks').insert(tasksToInsert);
+          }
+        }
       });
     }
 
     setFormData({ title: "", deadline: "", description: "", period: "" });
+    setFormTasks([]);
+    setNewTaskTitle("");
     setIsCreatingNew(false);
     setEditingId(null);
   };
 
   const handleSubmit = async () => {
-    if (!formData.title.trim() || !formData.description.trim()) {
+    // Проверяем обязательные поля
+    const hasRequiredFields = formData.title.trim() && 
+                             formData.description.trim() && 
+                             (formData.deadline || formData.period);
+
+    if (!hasRequiredFields) {
       toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все обязательные поля",
+        title: "Невозможно создать цель",
+        description: "Заполните все обязательные поля: название, описание и срок выполнения ИЛИ период",
         variant: "destructive",
       });
       return;
@@ -413,7 +433,7 @@ export default function Goals() {
 
               {/* Секция для добавления задач */}
               <div className="space-y-3 pt-2">
-                <Label>Задачи по цели (опционально, до 3 задач)</Label>
+                <Label>Задачи по цели (до 3 задач)</Label>
                 <p className="text-sm text-muted-foreground">
                   Добавьте задачи, которые нужно выполнить для достижения цели
                 </p>
@@ -481,12 +501,14 @@ export default function Goals() {
                 >
                   Сохранить черновик
                 </Button>
-                <Button 
-                  onClick={handleSubmit}
-                  disabled={isCreating || isUpdating}
-                >
-                  Создать цель
-                </Button>
+                {formData.title.trim() && formData.description.trim() && (formData.deadline || formData.period) && (
+                  <Button 
+                    onClick={handleSubmit}
+                    disabled={isCreating || isUpdating}
+                  >
+                    Создать цель
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -694,7 +716,11 @@ export default function Goals() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => deleteGoal(goal.id)}
+                          onClick={() => {
+                            if (confirm('Вы уверены, что хотите удалить эту цель?')) {
+                              deleteGoal(goal.id);
+                            }
+                          }}
                         >
                           Удалить
                         </Button>
