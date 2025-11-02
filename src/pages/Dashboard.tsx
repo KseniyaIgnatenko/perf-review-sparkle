@@ -34,7 +34,7 @@ export default function Dashboard() {
   const isLoading = goalsLoading || reviewsLoading || profileLoading || assessmentsLoading || feedbackLoading;
 
   // Считаем статистику по целям
-  const activeGoals = goals.filter(g => g.status === 'draft' || g.status === 'completed');
+  const activeGoals = goals.filter(g => g.status !== 'completed');
   const totalGoals = goals.length;
   const averageProgress = totalGoals > 0 
     ? Math.round(goals.reduce((sum, g) => sum + g.progress, 0) / totalGoals)
