@@ -498,6 +498,23 @@ export default function PeerReview() {
                             <CardDescription className="mt-1">
                               {review.reviewer?.position?.name}
                             </CardDescription>
+                            {(review.goal || review.task) && (
+                              <div className="mt-3 space-y-1">
+                                {review.goal && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Target className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Цель:</span>
+                                    <span>{review.goal.title}</span>
+                                  </div>
+                                )}
+                                {review.task && (
+                                  <div className="flex items-center gap-2 text-sm ml-6">
+                                    <span className="text-muted-foreground">Задача:</span>
+                                    <span>{review.task.title}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </CardHeader>

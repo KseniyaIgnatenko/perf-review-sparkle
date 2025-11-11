@@ -78,7 +78,9 @@ export function usePeerReviews() {
           reviewer:profiles!peer_reviews_reviewer_id_fkey(
             full_name,
             position:positions(name)
-          )
+          ),
+          goal:goals(title),
+          task:goal_tasks(title)
         `)
         .eq('reviewee_id', user.id)
         .eq('status', 'submitted')
