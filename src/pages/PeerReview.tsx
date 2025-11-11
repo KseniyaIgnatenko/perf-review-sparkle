@@ -408,8 +408,28 @@ export default function PeerReview() {
                               </Badge>
                             </CardTitle>
                             <CardDescription className="mt-1">
-                              Оценка: {request.score?.toFixed(1)}/10
+                              {request.reviewee?.position?.name}
                             </CardDescription>
+                            {(request.goal || request.task) && (
+                              <div className="mt-3 space-y-1">
+                                {request.goal && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Target className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Цель:</span>
+                                    <span>{request.goal.title}</span>
+                                  </div>
+                                )}
+                                {request.task && (
+                                  <div className="flex items-center gap-2 text-sm ml-6">
+                                    <span className="text-muted-foreground">Задача:</span>
+                                    <span>{request.task.title}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="mt-2 text-sm text-muted-foreground">
+                              Оценка: {request.score?.toFixed(1)}/10
+                            </div>
                           </div>
                         </div>
                       </CardHeader>
