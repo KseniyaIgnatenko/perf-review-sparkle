@@ -268,16 +268,22 @@ export default function PeerReview() {
                   <CardDescription>
                     Заполните все поля и оцените работу коллеги
                     {pendingReviews.find(r => r.id === selectedRequest)?.task ? (
-                      <span className="flex items-center gap-1 mt-1">
-                        <Target className="w-4 h-4" />
-                        Задача: {pendingReviews.find(r => r.id === selectedRequest)?.task?.title}
+                      <span className="flex items-center gap-2 mt-2 text-sm">
+                        <Target className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Задача:</span> {pendingReviews.find(r => r.id === selectedRequest)?.task?.title}
                       </span>
                     ) : pendingReviews.find(r => r.id === selectedRequest)?.goal ? (
-                      <span className="flex items-center gap-1 mt-1">
-                        <Target className="w-4 h-4" />
-                        Цель: {pendingReviews.find(r => r.id === selectedRequest)?.goal?.title}
+                      <span className="flex items-center gap-2 mt-2 text-sm">
+                        <Target className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Цель:</span> {pendingReviews.find(r => r.id === selectedRequest)?.goal?.title}
                       </span>
-                    ) : null}
+                    ) : (
+                      <span className="flex items-center gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          Общая оценка работы
+                        </Badge>
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -365,16 +371,22 @@ export default function PeerReview() {
                             </Badge>
                           </CardTitle>
                           {request.task ? (
-                            <CardDescription className="flex items-center gap-1 mt-1">
-                              <Target className="w-4 h-4" />
-                              Задача: {request.task.title}
+                            <CardDescription className="flex items-center gap-2 mt-2">
+                              <Target className="w-4 h-4 text-primary" />
+                              <span className="font-medium">Задача:</span> {request.task.title}
                             </CardDescription>
                           ) : request.goal ? (
-                            <CardDescription className="flex items-center gap-1 mt-1">
-                              <Target className="w-4 h-4" />
-                              Цель: {request.goal.title}
+                            <CardDescription className="flex items-center gap-2 mt-2">
+                              <Target className="w-4 h-4 text-primary" />
+                              <span className="font-medium">Цель:</span> {request.goal.title}
                             </CardDescription>
-                          ) : null}
+                          ) : (
+                            <CardDescription className="flex items-center gap-2 mt-2">
+                              <Badge variant="outline" className="text-xs">
+                                Общая оценка работы
+                              </Badge>
+                            </CardDescription>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -410,23 +422,27 @@ export default function PeerReview() {
                             <CardDescription className="mt-1">
                               {request.reviewee?.position?.name}
                             </CardDescription>
-                            {(request.goal || request.task) && (
-                              <div className="mt-3 space-y-1">
-                                {request.goal && (
+                            <div className="mt-3 space-y-1">
+                              {request.goal ? (
+                                <>
                                   <div className="flex items-center gap-2 text-sm">
-                                    <Target className="w-4 h-4 text-muted-foreground" />
+                                    <Target className="w-4 h-4 text-primary" />
                                     <span className="text-muted-foreground">Цель:</span>
                                     <span>{request.goal.title}</span>
                                   </div>
-                                )}
-                                {request.task && (
-                                  <div className="flex items-center gap-2 text-sm ml-6">
-                                    <span className="text-muted-foreground">Задача:</span>
-                                    <span>{request.task.title}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  {request.task && (
+                                    <div className="flex items-center gap-2 text-sm ml-6">
+                                      <span className="text-muted-foreground">Задача:</span>
+                                      <span>{request.task.title}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  Общая оценка работы
+                                </Badge>
+                              )}
+                            </div>
                             <div className="mt-2 text-sm text-muted-foreground">
                               Оценка: {request.score?.toFixed(1)}/10
                             </div>
@@ -472,23 +488,27 @@ export default function PeerReview() {
                                 <span className="text-xs">{request.reviewer.position.name}</span>
                               )}
                             </CardDescription>
-                            {(request.goal || request.task) && (
-                              <div className="mt-3 space-y-1">
-                                {request.goal && (
+                            <div className="mt-3 space-y-1">
+                              {request.goal ? (
+                                <>
                                   <div className="flex items-center gap-2 text-sm">
-                                    <Target className="w-4 h-4 text-muted-foreground" />
+                                    <Target className="w-4 h-4 text-primary" />
                                     <span className="text-muted-foreground">Цель:</span>
                                     <span>{request.goal.title}</span>
                                   </div>
-                                )}
-                                {request.task && (
-                                  <div className="flex items-center gap-2 text-sm ml-6">
-                                    <span className="text-muted-foreground">Задача:</span>
-                                    <span>{request.task.title}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  {request.task && (
+                                    <div className="flex items-center gap-2 text-sm ml-6">
+                                      <span className="text-muted-foreground">Задача:</span>
+                                      <span>{request.task.title}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  Общая оценка работы
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </CardHeader>
@@ -518,23 +538,27 @@ export default function PeerReview() {
                             <CardDescription className="mt-1">
                               {review.reviewer?.position?.name}
                             </CardDescription>
-                            {(review.goal || review.task) && (
-                              <div className="mt-3 space-y-1">
-                                {review.goal && (
+                            <div className="mt-3 space-y-1">
+                              {review.goal ? (
+                                <>
                                   <div className="flex items-center gap-2 text-sm">
-                                    <Target className="w-4 h-4 text-muted-foreground" />
+                                    <Target className="w-4 h-4 text-primary" />
                                     <span className="text-muted-foreground">Цель:</span>
                                     <span>{review.goal.title}</span>
                                   </div>
-                                )}
-                                {review.task && (
-                                  <div className="flex items-center gap-2 text-sm ml-6">
-                                    <span className="text-muted-foreground">Задача:</span>
-                                    <span>{review.task.title}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  {review.task && (
+                                    <div className="flex items-center gap-2 text-sm ml-6">
+                                      <span className="text-muted-foreground">Задача:</span>
+                                      <span>{review.task.title}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  Общая оценка работы
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </CardHeader>
