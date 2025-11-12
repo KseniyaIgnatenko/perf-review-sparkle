@@ -20,6 +20,7 @@ import TestSetup from "./pages/TestSetup";
 import NotFound from "./pages/NotFound";
 import ManagerFeedback from "./pages/ManagerFeedback";
 import PotentialAssessment from "./pages/PotentialAssessment";
+import FormBuilder from "./pages/FormBuilder";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/hr-analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/form-builder" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
               <Route path="/test-setup" element={<TestSetup />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck, User, Building2, UserCircle, TrendingUp } from "lucide-react";
+import { Home, Target, ClipboardList, Users, BarChart3, FileText, LogOut, ClipboardCheck, User, Building2, UserCircle, TrendingUp, Settings } from "lucide-react";
 import winkLogo from "@/assets/wink-logo.png";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ export const Navigation = () => {
     { icon: ClipboardCheck, label: "Моя команда", path: "/manager", roles: ['manager'], visibleInManagerMode: true },
     { icon: TrendingUp, label: "Оценка потенциала", path: "/manager/potential-assessment", roles: ['manager'], visibleInManagerMode: true },
     { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'], visibleInManagerMode: true },
+    { icon: Settings, label: "Конструктор форм", path: "/form-builder", roles: ['hr', 'admin'], visibleInManagerMode: true },
     { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
   ];
 

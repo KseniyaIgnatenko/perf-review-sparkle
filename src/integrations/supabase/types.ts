@@ -56,6 +56,272 @@ export type Database = {
         }
         Relationships: []
       }
+      form_answers: {
+        Row: {
+          answer_json: Json | null
+          answer_numeric: number | null
+          answer_value: string | null
+          created_at: string | null
+          id: string
+          question_id: string
+          score: number | null
+          submission_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          answer_json?: Json | null
+          answer_numeric?: number | null
+          answer_value?: string | null
+          created_at?: string | null
+          id?: string
+          question_id: string
+          score?: number | null
+          submission_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          answer_json?: Json | null
+          answer_numeric?: number | null
+          answer_value?: string | null
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          score?: number | null
+          submission_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "form_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "form_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_calculation_rules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          formula: string
+          id: string
+          rule_name: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          formula: string
+          id?: string
+          rule_name: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          formula?: string
+          id?: string
+          rule_name?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_calculation_rules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_questions: {
+        Row: {
+          created_at: string | null
+          help_text: string | null
+          id: string
+          is_required: boolean | null
+          max_value: number | null
+          min_value: number | null
+          options: Json | null
+          order_index: number
+          question_text: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          score_weight: number | null
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          max_value?: number | null
+          min_value?: number | null
+          options?: Json | null
+          order_index: number
+          question_text: string
+          question_type: Database["public"]["Enums"]["question_type"]
+          score_weight?: number | null
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          help_text?: string | null
+          id?: string
+          is_required?: boolean | null
+          max_value?: number | null
+          min_value?: number | null
+          options?: Json | null
+          order_index?: number
+          question_text?: string
+          question_type?: Database["public"]["Enums"]["question_type"]
+          score_weight?: number | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_questions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          created_at: string | null
+          goal_id: string | null
+          id: string
+          reviewee_id: string | null
+          status: Database["public"]["Enums"]["form_submission_status"] | null
+          submitted_at: string | null
+          submitted_by: string | null
+          task_id: string | null
+          template_id: string
+          total_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          goal_id?: string | null
+          id?: string
+          reviewee_id?: string | null
+          status?: Database["public"]["Enums"]["form_submission_status"] | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+          task_id?: string | null
+          template_id: string
+          total_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          goal_id?: string | null
+          id?: string
+          reviewee_id?: string | null
+          status?: Database["public"]["Enums"]["form_submission_status"] | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+          task_id?: string | null
+          template_id?: string
+          total_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "goal_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          department_id: string | null
+          description: string | null
+          form_type: Database["public"]["Enums"]["form_type"]
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_template_id: string | null
+          period: string | null
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          department_id?: string | null
+          description?: string | null
+          form_type: Database["public"]["Enums"]["form_type"]
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_template_id?: string | null
+          period?: string | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          department_id?: string | null
+          description?: string | null
+          form_type?: Database["public"]["Enums"]["form_type"]
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_template_id?: string | null
+          period?: string | null
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_templates_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_templates_parent_template_id_fkey"
+            columns: ["parent_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_tasks: {
         Row: {
           created_at: string | null
@@ -648,7 +914,20 @@ export type Database = {
     Enums: {
       app_role: "admin" | "hr" | "manager" | "employee"
       assessment_status: "draft" | "submitted" | "reviewed"
+      form_submission_status: "draft" | "submitted" | "reviewed"
+      form_type:
+        | "self_assessment"
+        | "peer_review"
+        | "potential_assessment"
+        | "manager_feedback"
+        | "custom"
       goal_status: "draft" | "completed" | "not_started" | "in_progress"
+      question_type:
+        | "text"
+        | "number"
+        | "scale"
+        | "single_choice"
+        | "multiple_choice"
       report_status: "ready" | "in_progress"
       report_type: "personal" | "team" | "company"
       review_status: "pending" | "submitted" | "received"
@@ -783,7 +1062,22 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "hr", "manager", "employee"],
       assessment_status: ["draft", "submitted", "reviewed"],
+      form_submission_status: ["draft", "submitted", "reviewed"],
+      form_type: [
+        "self_assessment",
+        "peer_review",
+        "potential_assessment",
+        "manager_feedback",
+        "custom",
+      ],
       goal_status: ["draft", "completed", "not_started", "in_progress"],
+      question_type: [
+        "text",
+        "number",
+        "scale",
+        "single_choice",
+        "multiple_choice",
+      ],
       report_status: ["ready", "in_progress"],
       report_type: ["personal", "team", "company"],
       review_status: ["pending", "submitted", "received"],
