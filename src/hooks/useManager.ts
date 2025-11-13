@@ -11,6 +11,10 @@ export interface EmployeeWithStats {
   totalGoals: number;
   selfAssessmentScore: number | null;
   peerAverageScore: number | null;
+  performanceScore: number | null;
+  potentialScore: number | null;
+  performanceCategory: number | null;
+  potentialCategory: number | null;
   status: 'pending' | 'in-review' | 'completed';
 }
 
@@ -69,6 +73,17 @@ export function useTeamMembers() {
             ? peerReviews.reduce((sum, r) => sum + (r.score || 0), 0) / peerReviews.length
             : null;
 
+          // Оценка потенциала
+          const { data: potentialAssessments } = await supabase
+            .from('potential_assessments')
+            .select('performance_score, potential_score, performance_category, potential_category')
+            .eq('employee_id', profile.id)
+            .eq('status', 'submitted')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          const latestAssessment = potentialAssessments?.[0] || null;
+
           // Определяем статус
           let status: 'pending' | 'in-review' | 'completed' = 'pending';
           if (selfAssessmentScore && peerAverageScore) {
@@ -86,6 +101,10 @@ export function useTeamMembers() {
             totalGoals,
             selfAssessmentScore,
             peerAverageScore,
+            performanceScore: latestAssessment?.performance_score || null,
+            potentialScore: latestAssessment?.potential_score || null,
+            performanceCategory: latestAssessment?.performance_category || null,
+            potentialCategory: latestAssessment?.potential_category || null,
             status,
           };
         })

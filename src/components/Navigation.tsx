@@ -21,7 +21,6 @@ export const Navigation = () => {
     { icon: ClipboardList, label: "Самооценка", path: "/self-assessment", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
     { icon: Users, label: "Оценка коллег", path: "/peer-review", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
     { icon: ClipboardCheck, label: "Моя команда", path: "/manager", roles: ['manager'], visibleInManagerMode: true },
-    { icon: TrendingUp, label: "Оценка потенциала", path: "/manager/potential-assessment", roles: ['manager'], visibleInManagerMode: true },
     { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'], visibleInManagerMode: true },
     { icon: Settings, label: "Конструктор форм", path: "/form-builder", roles: ['hr', 'admin', 'manager'], visibleInManagerMode: true, badge: 'beta' },
     { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },

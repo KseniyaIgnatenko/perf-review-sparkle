@@ -21,8 +21,12 @@ export default function PotentialAssessment() {
   const { profiles } = useProfiles();
   const { createAssessment, updateAssessment } = usePotentialAssessments();
 
+  // Получаем employeeId из URL параметров
+  const searchParams = new URLSearchParams(window.location.search);
+  const preselectedEmployeeId = searchParams.get('employeeId');
+
   const [formData, setFormData] = useState({
-    employee_id: '',
+    employee_id: preselectedEmployeeId || '',
     manager_id: user?.id || '',
     period: '',
     status: 'draft',

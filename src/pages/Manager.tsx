@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { TrendingUp, Users, AlertCircle } from "lucide-react";
+import { TrendingUp, Users, AlertCircle, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useTeamMembers } from "@/hooks/useManager";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 export default function Manager() {
   const { teamMembers, isLoading } = useTeamMembers();
+  const navigate = useNavigate();
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -141,7 +143,7 @@ export default function Manager() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Самооценка:</span>
@@ -153,6 +155,20 @@ export default function Manager() {
                           <span className="text-muted-foreground">Оценка коллег:</span>
                           <span className="font-semibold">
                             {employee.peerAverageScore?.toFixed(1) || 'Н/Д'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Результативность:</span>
+                          <span className="font-semibold">
+                            {employee.performanceScore?.toFixed(1) || 'Н/Д'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Потенциал:</span>
+                          <span className="font-semibold">
+                            {employee.potentialScore?.toFixed(1) || 'Н/Д'}
                           </span>
                         </div>
                       </div>
@@ -170,6 +186,14 @@ export default function Manager() {
                       </div>
                     </div>
                     <div className="flex gap-2 justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/manager/potential-assessment?employeeId=${employee.id}`)}
+                      >
+                        <Target className="w-4 h-4 mr-2" />
+                        Оценка потенциала
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -208,7 +232,7 @@ export default function Manager() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Самооценка:</span>
@@ -220,6 +244,20 @@ export default function Manager() {
                             <span className="text-muted-foreground">Оценка коллег:</span>
                             <span className="font-semibold">
                               {employee.peerAverageScore?.toFixed(1) || 'Н/Д'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Результативность:</span>
+                            <span className="font-semibold">
+                              {employee.performanceScore?.toFixed(1) || 'Н/Д'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Потенциал:</span>
+                            <span className="font-semibold">
+                              {employee.potentialScore?.toFixed(1) || 'Н/Д'}
                             </span>
                           </div>
                         </div>
@@ -237,6 +275,14 @@ export default function Manager() {
                         </div>
                       </div>
                       <div className="flex gap-2 justify-end">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/manager/potential-assessment?employeeId=${employee.id}`)}
+                        >
+                          <Target className="w-4 h-4 mr-2" />
+                          Оценка потенциала
+                        </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
