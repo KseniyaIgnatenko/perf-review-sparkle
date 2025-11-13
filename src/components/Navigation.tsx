@@ -23,7 +23,7 @@ export const Navigation = () => {
     { icon: ClipboardCheck, label: "Моя команда", path: "/manager", roles: ['manager'], visibleInManagerMode: true },
     { icon: TrendingUp, label: "Оценка потенциала", path: "/manager/potential-assessment", roles: ['manager'], visibleInManagerMode: true },
     { icon: BarChart3, label: "HR Аналитика", path: "/hr-analytics", roles: ['hr', 'admin'], visibleInManagerMode: true },
-    { icon: Settings, label: "Конструктор форм", path: "/form-builder", roles: ['hr', 'admin'], visibleInManagerMode: true },
+    { icon: Settings, label: "Конструктор форм", path: "/form-builder", roles: ['hr', 'admin', 'manager'], visibleInManagerMode: true, badge: 'beta' },
     { icon: FileText, label: "Отчеты", path: "/reports", roles: ['employee', 'manager', 'hr', 'admin'], visibleInManagerMode: false },
   ];
 
@@ -80,6 +80,11 @@ export const Navigation = () => {
                   >
                     <Icon className="w-4 h-4" />
                     <span className="text-sm font-medium">{item.label}</span>
+                    {item.badge && (
+                      <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
+                        {item.badge}
+                      </Badge>
+                    )}
                   </Link>
                 );
               })}
